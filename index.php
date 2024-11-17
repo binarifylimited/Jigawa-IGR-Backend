@@ -1,6 +1,15 @@
 <?php
-require_once './middleware/ApiAuditLogger.php';
-require_once './helpers/auth_helper.php'; // For JWT decoding
+require_once 'middleware/ApiAuditLogger.php';
+require_once 'helpers/auth_helper.php'; // For JWT decoding
+
+// Proceed with your main application logic (e.g., routing)
+require_once 'routes/payment.php';
+require_once 'routes/web.php';
+require_once 'routes/invoice.php';
+require_once 'routes/payee.php';
+require_once 'routes/enumerator.php';
+require_once 'routes/mda.php';   // MDA-related routes (create MDA, etc.)
+
 $logger = new ApiAuditLogger();
 // Allow only specific domains (e.g., http://example.com) to access the API
 $allowedOrigins = ['http://localhost', 'localhost'];
