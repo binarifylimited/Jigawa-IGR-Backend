@@ -1,5 +1,7 @@
 <?php
-
+require_once './middleware/ApiAuditLogger.php';
+require_once './helpers/auth_helper.php'; // For JWT decoding
+$logger = new ApiAuditLogger();
 // Allow only specific domains (e.g., http://example.com) to access the API
 $allowedOrigins = ['http://localhost', 'localhost'];
 
@@ -33,6 +35,41 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit(0);
 }
 
+
+try {
+    // Capture the request details
+    $endpoint = $_SERVER['REQUEST_URI'];
+    $method = $_SERVER['REQUEST_METHOD'];
+    $requestPayload = file_get_contents('php://input');
+
+    // Authenticate the user and extract their ID and type
+    $userId = null;
+    $userType = null;
+    $authData = authenticate(); // Call the authenticate function
+    if ($authData) {
+        $userId = $authData['user_id'] ?? null;
+        $userType = $authData['user_type'] ?? null;
+    }
+
+    // Route handling logic
+    ob_start(); // Start output buffering to capture response
+    require_once './routes/web.php'; // Load your routes
+    $responsePayload = ob_get_clean(); // Get the response output
+    $statusCode = http_response_code();
+
+    // Log the request and response
+    $logger->logRequest($endpoint, $method, $requestPayload, $responsePayload, $statusCode, $userId, $userType);
+
+    // Send the captured response
+    echo $responsePayload;
+} catch (Exception $e) {
+    // Handle exceptions and log them as well
+    $responsePayload = json_encode(["status" => "error", "message" => $e->getMessage()]);
+    $statusCode = 500;
+    $logger->logRequest($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD'], $requestPayload, $responsePayload, $statusCode, $userId, $userType);
+    http_response_code($statusCode);
+    echo $responsePayload;
+}
 // Proceed with your main application logic (e.g., routing)
 require_once 'routes/payment.php';
 require_once 'routes/web.php';
