@@ -21,6 +21,7 @@ $request_method = $_SERVER['REQUEST_METHOD'];
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $uri = explode('/', $uri);
 $uri = '/'.end( $uri );
+// echo $uri;
 // Handle preflight requests (OPTIONS method)
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     // Allowed methods
