@@ -1,5 +1,5 @@
 RewriteEngine On
-RewriteBase /useibs/
+RewriteBase /Jigawa-IGR-Backend/
 
 # Route all requests through index.php
 RewriteCond %{REQUEST_FILENAME} !-f

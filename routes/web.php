@@ -118,7 +118,7 @@ if ($request_method == 'POST' && $uri == '/register-employee-with-salary') {
 
 // Route: Register Taxpayer (POST)
 if ($request_method == 'POST' && $uri == '/register-taxpayer') {
-    // $decoded_token = authenticate();  // Authenticate the request
+    $decoded_token = authenticate();  // Authenticate the request
     $input = json_decode(file_get_contents('php://input'), true);
     $registrationController->registerTaxpayer($input);
     exit;
