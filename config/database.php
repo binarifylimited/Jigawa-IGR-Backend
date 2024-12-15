@@ -1,7 +1,7 @@
 <?php
 class Database {
     private $host = 'localhost';      // Database host
-    private $db_name = 'plateauigr_ibs'; // Your database name
+    private $db_name = 'jigawa'; // Your database name
     private $username = 'root';// Database username
     private $password = '';// Database password
     public $conn;
