@@ -24,3 +24,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $uri === '/verify-taxpayer') {
     echo $response;
     exit;
 }
+
+// Route: Regenerate verification code
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $uri === '/regenerate-verification-code') {
+    // Parse JSON body
+    $input = json_decode(file_get_contents('php://input'), true);
+    $response = $taxpayerController->regenerateVerificationCode($input);
+
+    // Set response header and output the response in JSON format
+    header('Content-Type: application/json');
+    echo $response;
+    exit;
+}

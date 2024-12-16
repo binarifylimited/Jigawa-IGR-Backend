@@ -128,4 +128,56 @@ class TaxpayerController {
             return json_encode(["status" => "error", "message" => "Failed to verify account"]);
         }
     }
+
+    public function regenerateVerificationCode($input) {
+        // Validate input
+        if (empty($input['tax_number']) && empty($input['phone']) && empty($input['email'])) {
+            return json_encode(["status" => "error", "message" => "Provide tax_number, phone, or email"]);
+        }
+
+        // Determine the identifier (tax_number, phone, or email)
+        $taxIdentifier = !empty($input['tax_number']) ? $input['tax_number'] : (!empty($input['phone']) ? $input['phone'] : $input['email']);
+
+        // Check if taxpayer exists
+        $query = "
+            SELECT ts.verification_status, t.id AS taxpayer_id
+            FROM taxpayer t
+            INNER JOIN taxpayer_security ts ON t.id = ts.taxpayer_id
+            WHERE t.tax_number = ? OR t.phone = ? OR t.email = ?
+        ";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bind_param("sss", $taxIdentifier, $taxIdentifier, $taxIdentifier);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows === 0) {
+            return json_encode(["status" => "error", "message" => "Taxpayer not found"]);
+        }
+
+        $taxpayer = $result->fetch_assoc();
+
+        // Check if the account is already verified
+        if ($taxpayer['verification_status'] === 'verified') {
+            return json_encode(["status" => "error", "message" => "Account is already verified"]);
+        }
+
+        // Generate a new verification code
+        $newVerificationCode = rand(100000, 999999);
+
+        // Update the verification code in the database
+        $updateQuery = "UPDATE taxpayer_security SET verification_code = ? WHERE taxpayer_id = ?";
+        $updateStmt = $this->conn->prepare($updateQuery);
+        $updateStmt->bind_param("si", $newVerificationCode, $taxpayer['taxpayer_id']);
+        $updateStmt->execute();
+
+        if ($updateStmt->affected_rows > 0) {
+            return json_encode([
+                "status" => "success",
+                "message" => "New verification code generated",
+                "verification_code" => $newVerificationCode // Optional: Remove in production for security reasons
+            ]);
+        } else {
+            return json_encode(["status" => "error", "message" => "Failed to regenerate verification code"]);
+        }
+    }
 }

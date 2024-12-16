@@ -13,15 +13,15 @@ $revenueHeadController = new RevenueHeadController();
 
 // Route: Create MDA (POST)
 if ($request_method == 'POST' && $uri == '/create-mda') {
-    $decoded_token = authenticate();  // Authenticate the request
-    // Call the register method in RegistrationController
+    // $decoded_token = authenticate();  // Authenticate the request
+    // // Call the register method in RegistrationController
 
-    // Optionally check if the authenticated user has the role to create an admin
-    if ($decoded_token['role'] !== 'super_admin') {
-        echo json_encode(['status' => 'error', 'message' => 'Unauthorized: Only super admins can register new users']);
-        http_response_code(403); // Forbidden
-        exit;
-    }
+    // // Optionally check if the authenticated user has the role to create an admin
+    // if ($decoded_token['role'] !== 'super_admin') {
+    //     echo json_encode(['status' => 'error', 'message' => 'Unauthorized: Only super admins can register new users']);
+    //     http_response_code(403); // Forbidden
+    //     exit;
+    // }
     $input = json_decode(file_get_contents('php://input'), true);
     $mdaController->createMda($input);
     exit;
@@ -30,15 +30,15 @@ if ($request_method == 'POST' && $uri == '/create-mda') {
 
 // Route: Create Revenue Head for a specific MDA (POST)
 if ($request_method == 'POST' && $uri == '/create-revenue-head') {
-    $decoded_token = authenticate();  // Authenticate the request
-    // Call the register method in RegistrationController
+    // $decoded_token = authenticate();  // Authenticate the request
+    // // Call the register method in RegistrationController
 
-    // Optionally check if the authenticated user has the role to create an admin
-    if ($decoded_token['role'] !== 'super_admin') {
-        echo json_encode(['status' => 'error', 'message' => 'Unauthorized: Only super admins can register new users']);
-        http_response_code(403); // Forbidden
-        exit;
-    }
+    // // Optionally check if the authenticated user has the role to create an admin
+    // if ($decoded_token['role'] !== 'super_admin') {
+    //     echo json_encode(['status' => 'error', 'message' => 'Unauthorized: Only super admins can register new users']);
+    //     http_response_code(403); // Forbidden
+    //     exit;
+    // }
     $input = json_decode(file_get_contents('php://input'), true);
     $revenueHeadController->createRevenueHead($input);
     exit;
@@ -46,15 +46,15 @@ if ($request_method == 'POST' && $uri == '/create-revenue-head') {
 
 // Route: Create Multiple Revenue Heads (POST)
 if ($request_method == 'POST' && $uri == '/create-multiple-revenue-heads') {
-    $decoded_token = authenticate();  // Authenticate the request
-    // Call the register method in RegistrationController
+    // $decoded_token = authenticate();  // Authenticate the request
+    // // Call the register method in RegistrationController
 
-    // Optionally check if the authenticated user has the role to create an admin
-    if ($decoded_token['role'] !== 'super_admin') {
-        echo json_encode(['status' => 'error', 'message' => 'Unauthorized: Only super admins can register new users']);
-        http_response_code(403); // Forbidden
-        exit;
-    }
+    // // Optionally check if the authenticated user has the role to create an admin
+    // if ($decoded_token['role'] !== 'super_admin') {
+    //     echo json_encode(['status' => 'error', 'message' => 'Unauthorized: Only super admins can register new users']);
+    //     http_response_code(403); // Forbidden
+    //     exit;
+    // }
     $input = json_decode(file_get_contents('php://input'), true);
     $revenueHeadController->createMultipleRevenueHeads($input);
     exit;
@@ -63,15 +63,15 @@ if ($request_method == 'POST' && $uri == '/create-multiple-revenue-heads') {
 
 // Route: Update MDA information (POST)
 if ($request_method == 'POST' && $uri == '/update-mda') {
-    $decoded_token = authenticate();  // Authenticate the request
-    // Call the register method in RegistrationController
+    // $decoded_token = authenticate();  // Authenticate the request
+    // // Call the register method in RegistrationController
 
-    // Optionally check if the authenticated user has the role to create an admin
-    if ($decoded_token['role'] !== 'super_admin') {
-        echo json_encode(['status' => 'error', 'message' => 'Unauthorized: Only super admins can register new users']);
-        http_response_code(403); // Forbidden
-        exit;
-    }
+    // // Optionally check if the authenticated user has the role to create an admin
+    // if ($decoded_token['role'] !== 'super_admin') {
+    //     echo json_encode(['status' => 'error', 'message' => 'Unauthorized: Only super admins can register new users']);
+    //     http_response_code(403); // Forbidden
+    //     exit;
+    // }
     $input = json_decode(file_get_contents('php://input'), true);
     $mdaController->updateMda($input);
     exit;
@@ -80,15 +80,15 @@ if ($request_method == 'POST' && $uri == '/update-mda') {
 
 // Route: Update Revenue Head information (POST)
 if ($request_method == 'POST' && $uri == '/update-revenue-head') {
-    $decoded_token = authenticate();  // Authenticate the request
-    // Call the register method in RegistrationController
+    // $decoded_token = authenticate();  // Authenticate the request
+    // // Call the register method in RegistrationController
 
-    // Optionally check if the authenticated user has the role to create an admin
-    if ($decoded_token['role'] !== 'super_admin') {
-        echo json_encode(['status' => 'error', 'message' => 'Unauthorized: Only super admins can register new users']);
-        http_response_code(403); // Forbidden
-        exit;
-    }
+    // // Optionally check if the authenticated user has the role to create an admin
+    // if ($decoded_token['role'] !== 'super_admin') {
+    //     echo json_encode(['status' => 'error', 'message' => 'Unauthorized: Only super admins can register new users']);
+    //     http_response_code(403); // Forbidden
+    //     exit;
+    // }
     $input = json_decode(file_get_contents('php://input'), true);
     $revenueHeadController->updateRevenueHead($input);
     exit;
@@ -96,15 +96,15 @@ if ($request_method == 'POST' && $uri == '/update-revenue-head') {
 
 // Route: Fetch All MDAs with pagination (GET)
 if ($request_method == 'GET' && $uri == '/get-mdas') {
-    $decoded_token = authenticate();  // Authenticate the request
-    // Call the register method in RegistrationController
+    // $decoded_token = authenticate();  // Authenticate the request
+    // // Call the register method in RegistrationController
 
-    // Optionally check if the authenticated user has the role to create an admin
-    if ($decoded_token['role'] !== 'super_admin') {
-        echo json_encode(['status' => 'error', 'message' => 'Unauthorized: Only super admins can register new users']);
-        http_response_code(403); // Forbidden
-        exit;
-    }
+    // // Optionally check if the authenticated user has the role to create an admin
+    // if ($decoded_token['role'] !== 'super_admin') {
+    //     echo json_encode(['status' => 'error', 'message' => 'Unauthorized: Only super admins can register new users']);
+    //     http_response_code(403); // Forbidden
+    //     exit;
+    // }
     $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
     $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
     $mdaController->getAllMdas($page, $limit);
@@ -113,15 +113,15 @@ if ($request_method == 'GET' && $uri == '/get-mdas') {
 
 // Route: Fetch MDA by filters (GET)
 if ($request_method == 'GET' && $uri == '/get-mda') {
-    $decoded_token = authenticate();  // Authenticate the request
-    // Call the register method in RegistrationController
+    // $decoded_token = authenticate();  // Authenticate the request
+    // // Call the register method in RegistrationController
 
-    // Optionally check if the authenticated user has the role to create an admin
-    if ($decoded_token['role'] !== 'super_admin') {
-        echo json_encode(['status' => 'error', 'message' => 'Unauthorized: Only super admins can register new users']);
-        http_response_code(403); // Forbidden
-        exit;
-    }
+    // // Optionally check if the authenticated user has the role to create an admin
+    // if ($decoded_token['role'] !== 'super_admin') {
+    //     echo json_encode(['status' => 'error', 'message' => 'Unauthorized: Only super admins can register new users']);
+    //     http_response_code(403); // Forbidden
+    //     exit;
+    // }
     $filters = [
         'id' => isset($_GET['id']) ? (int)$_GET['id'] : null,
         'fullname' => isset($_GET['fullname']) ? $_GET['fullname'] : null,
@@ -137,15 +137,15 @@ if ($request_method == 'GET' && $uri == '/get-mda') {
 
 // Route: Fetch Revenue Head by filters (GET)
 if ($request_method == 'GET' && $uri == '/get-revenue-head') {
-    $decoded_token = authenticate();  // Authenticate the request
+    // $decoded_token = authenticate();  // Authenticate the request
     // Call the register method in RegistrationController
 
     // Optionally check if the authenticated user has the role to create an admin
-    if ($decoded_token['role'] !== 'super_admin') {
-        echo json_encode(['status' => 'error', 'message' => 'Unauthorized: Only super admins can register new users']);
-        http_response_code(403); // Forbidden
-        exit;
-    }
+    // if ($decoded_token['role'] !== 'super_admin') {
+    //     echo json_encode(['status' => 'error', 'message' => 'Unauthorized: Only super admins can register new users']);
+    //     http_response_code(403); // Forbidden
+    //     exit;
+    // }
     $filters = [
         'id' => isset($_GET['id']) ? (int)$_GET['id'] : null,
         'item_code' => isset($_GET['item_code']) ? $_GET['item_code'] : null,

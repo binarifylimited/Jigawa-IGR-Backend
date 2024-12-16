@@ -44,7 +44,7 @@ class AuthController {
         $issued_at = time();
         $expiration_time = $issued_at + 3600;  // jwt valid for 1 hour
         $payload = array(
-            'iss' => 'https://plateauigr.com',  // Issuer
+            'iss' => 'https://phpclusters-188739-0.cloudclusters.net',  // Issuer
             'iat' => $issued_at,               // Issued at
             'exp' => $expiration_time,         // Expiration time
             'user_id' => $user['id'],          // Store user ID in token
