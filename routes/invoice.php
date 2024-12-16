@@ -21,15 +21,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $uri === '/create-invoice') {
 
 // Route: Fetch invoices with pagination and filters (GET)
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && $uri === '/get-invoices') {
-    $decoded_token = authenticate();  // Authenticate the request
+    // $decoded_token = authenticate();  // Authenticate the request
     // Call the register method in RegistrationController
 
     // Optionally check if the authenticated user has the role to create an admin
-    if ($decoded_token['role'] !== 'super_admin') {
-        echo json_encode(['status' => 'error', 'message' => 'Unauthorized: Only super admins can register new users']);
-        http_response_code(403); // Forbidden
-        exit;
-    }
+    // if ($decoded_token['role'] !== 'super_admin') {
+    //     echo json_encode(['status' => 'error', 'message' => 'Unauthorized: Only super admins can register new users']);
+    //     http_response_code(403); // Forbidden
+    //     exit;
+    // }
     $filters = [
         'invoice_number' => isset($_GET['invoice_number']) ? $_GET['invoice_number'] : null,
         'tax_number' => isset($_GET['tax_number']) ? $_GET['tax_number'] : null,
