@@ -16,6 +16,7 @@ $origin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '';
 // Always allow these headers (ensure these headers match what you expect to receive)
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
 header("Content-Type: application/json");
+header("Access-Control-Allow-Origin: *");
 // Check the request method and the endpoint (based on URL)
 $request_method = $_SERVER['REQUEST_METHOD'];
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
@@ -26,7 +27,7 @@ $uri = '/'.end( $uri );
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     // Allowed methods
     header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-    
+    header("Access-Control-Allow-Origin: *");
     // Allow credentials (if necessary, for authentication or cookies)
     header("Access-Control-Allow-Credentials: true");
 
