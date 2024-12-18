@@ -47,7 +47,8 @@ class AuthController {
             'iss' => 'https://phpclusters-188739-0.cloudclusters.net',  // Issuer
             'iat' => $issued_at,               // Issued at
             'exp' => $expiration_time,         // Expiration time
-            'user_id' => $user['id'],          // Store user ID in token
+            'user_id' => $user['id'], 
+            'user_id_number' => $user['tax_number'],          // Store user ID in token
             'email' => $user['email'],         // Email in the payload
             'user_type' => $user['user_type'], // Store user type (admin, mda, etc.)
         );

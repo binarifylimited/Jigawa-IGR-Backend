@@ -324,6 +324,30 @@ class PaymentController {
             $types .= "ss";
         }
     
+        if (!empty($queryParams['payment_channel'])) {
+            $query .= " AND pc.payment_channel = ?";
+            $params[] = $queryParams['payment_channel'];
+            $types .= "s";
+        }
+    
+        if (!empty($queryParams['payment_method'])) {
+            $query .= " AND pc.payment_method = ?";
+            $params[] = $queryParams['payment_method'];
+            $types .= "s";
+        }
+    
+        if (!empty($queryParams['payment_bank'])) {
+            $query .= " AND pc.payment_bank = ?";
+            $params[] = $queryParams['payment_bank'];
+            $types .= "s";
+        }
+    
+        if (!empty($queryParams['payment_gateway'])) {
+            $query .= " AND pc.payment_gateway = ?";
+            $params[] = $queryParams['payment_gateway'];
+            $types .= "s";
+        }
+    
         // Add pagination
         $query .= " LIMIT ? OFFSET ?";
         $params[] = $limit;
@@ -399,6 +423,18 @@ class PaymentController {
         if (!empty($queryParams['start_date']) && !empty($queryParams['end_date'])) {
             $totalQuery .= " AND date_payment_created BETWEEN '" . $queryParams['start_date'] . "' AND '" . $queryParams['end_date'] . "'";
         }
+        if (!empty($queryParams['payment_channel'])) {
+            $totalQuery .= " AND payment_channel = '" . $queryParams['payment_channel'] . "'";
+        }
+        if (!empty($queryParams['payment_method'])) {
+            $totalQuery .= " AND payment_method = '" . $queryParams['payment_method'] . "'";
+        }
+        if (!empty($queryParams['payment_bank'])) {
+            $totalQuery .= " AND payment_bank = '" . $queryParams['payment_bank'] . "'";
+        }
+        if (!empty($queryParams['payment_gateway'])) {
+            $totalQuery .= " AND payment_gateway = '" . $queryParams['payment_gateway'] . "'";
+        }
     
         $totalResult = $this->conn->query($totalQuery);
         $total = $totalResult->fetch_assoc()['total'];
@@ -416,6 +452,7 @@ class PaymentController {
             ]
         ]);
     }
+    
     
 
     // Process PayDirect Payment (IP validation already done in the route)
