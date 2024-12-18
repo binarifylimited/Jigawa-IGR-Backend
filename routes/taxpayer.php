@@ -36,3 +36,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $uri === '/regenerate-verification-
     echo $response;
     exit;
 }
+
+// Route: Get all taxpayers with filters
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && $uri === '/get-taxpayers') {
+    $queryParams = $_GET;
+    $response = $taxpayerController->getAllTaxpayers($queryParams);
+
+    // Set response header and output the response in JSON format
+    header('Content-Type: application/json');
+    echo $response;
+    exit;
+}
