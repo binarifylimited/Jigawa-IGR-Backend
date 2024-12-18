@@ -271,56 +271,65 @@ class PaymentController {
     }
 
     // Retrieve payment collection with optional filters and associated revenue heads
-     // Retrieve payment collection with optional filters and associated revenue heads including MDA names
-     public function getPaymentCollection($queryParams) {
+    public function getPaymentCollection($queryParams) {
         // Set default pagination parameters
         $page = isset($queryParams['page']) ? (int)$queryParams['page'] : 1;
         $limit = isset($queryParams['limit']) ? (int)$queryParams['limit'] : 10;
         $offset = ($page - 1) * $limit;
-
-        // Base query with JOIN to get payment and invoice details
+    
+        // Base query with corrected JOINs to get payment, invoice, and user details
         $query = "SELECT 
                     pc.*, 
-                    inv.revenue_head AS invoice_revenue_heads
-                FROM payment_collection pc
-                JOIN invoices inv ON pc.invoice_number = inv.invoice_number
-                WHERE 1=1";
-        
+                    inv.revenue_head AS invoice_revenue_heads,
+                    t.first_name AS taxpayer_first_name, 
+                    t.surname AS taxpayer_surname, 
+                    t.email AS taxpayer_email, 
+                    t.phone AS taxpayer_phone, 
+                    etp.first_name AS enumerator_first_name, 
+                    etp.last_name AS enumerator_last_name, 
+                    etp.email AS enumerator_email, 
+                    etp.phone AS enumerator_phone
+                  FROM payment_collection pc
+                  LEFT JOIN invoices inv ON pc.invoice_number = inv.invoice_number
+                  LEFT JOIN taxpayer t ON pc.user_id = t.tax_number
+                  LEFT JOIN enumerator_tax_payers etp ON pc.user_id = etp.tax_number
+                  WHERE 1=1";
+    
         $params = [];
         $types = "";
-
+    
         // Apply filters if provided in query parameters
         if (!empty($queryParams['invoice_number'])) {
             $query .= " AND pc.invoice_number = ?";
             $params[] = $queryParams['invoice_number'];
             $types .= "s";
         }
-
+    
         if (!empty($queryParams['payment_reference_number'])) {
             $query .= " AND pc.payment_reference_number = ?";
             $params[] = $queryParams['payment_reference_number'];
             $types .= "s";
         }
-
+    
         if (!empty($queryParams['status'])) {
             $query .= " AND pc.payment_status = ?";
             $params[] = $queryParams['status'];
             $types .= "s";
         }
-
+    
         if (!empty($queryParams['start_date']) && !empty($queryParams['end_date'])) {
             $query .= " AND pc.date_payment_created BETWEEN ? AND ?";
             $params[] = $queryParams['start_date'];
             $params[] = $queryParams['end_date'];
             $types .= "ss";
         }
-
+    
         // Add pagination
         $query .= " LIMIT ? OFFSET ?";
         $params[] = $limit;
         $params[] = $offset;
         $types .= "ii";
-
+    
         // Prepare and execute query
         $stmt = $this->conn->prepare($query);
         if ($types) {
@@ -328,14 +337,14 @@ class PaymentController {
         }
         $stmt->execute();
         $result = $stmt->get_result();
-
+    
         // Fetch and format results
         $payments = [];
         while ($row = $result->fetch_assoc()) {
             // Decode revenue_head JSON from invoice table
             $revenueHeads = json_decode($row['invoice_revenue_heads'], true);
             $row['associated_revenue_heads'] = [];
-
+    
             // For each revenue head, fetch details from revenue_heads and mda tables
             foreach ($revenueHeads as $revenueHead) {
                 $queryRevenueHead = "
@@ -347,7 +356,7 @@ class PaymentController {
                 $stmtRevenueHead->bind_param('i', $revenueHead['revenue_head_id']);
                 $stmtRevenueHead->execute();
                 $revenueResult = $stmtRevenueHead->get_result();
-
+    
                 if ($revenueDetails = $revenueResult->fetch_assoc()) {
                     $row['associated_revenue_heads'][] = [
                         'revenue_head_id' => $revenueHead['revenue_head_id'],
@@ -359,9 +368,23 @@ class PaymentController {
                 }
                 $stmtRevenueHead->close();
             }
+    
+            // Include user information
+            $row['user_info'] = [
+                "first_name" => $row['taxpayer_first_name'] ?? $row['enumerator_first_name'],
+                "surname" => $row['taxpayer_surname'] ?? $row['enumerator_last_name'],
+                "email" => $row['taxpayer_email'] ?? $row['enumerator_email'],
+                "phone" => $row['taxpayer_phone'] ?? $row['enumerator_phone']
+            ];
+    
+            unset(
+                $row['taxpayer_first_name'], $row['taxpayer_surname'], $row['taxpayer_email'], $row['taxpayer_phone'],
+                $row['enumerator_first_name'], $row['enumerator_last_name'], $row['enumerator_email'], $row['enumerator_phone']
+            );
+    
             $payments[] = $row;
         }
-
+    
         // Get total count for pagination
         $totalQuery = "SELECT COUNT(*) as total FROM payment_collection WHERE 1=1";
         if (!empty($queryParams['invoice_number'])) {
@@ -376,11 +399,11 @@ class PaymentController {
         if (!empty($queryParams['start_date']) && !empty($queryParams['end_date'])) {
             $totalQuery .= " AND date_payment_created BETWEEN '" . $queryParams['start_date'] . "' AND '" . $queryParams['end_date'] . "'";
         }
-
+    
         $totalResult = $this->conn->query($totalQuery);
         $total = $totalResult->fetch_assoc()['total'];
         $totalPages = ceil($total / $limit);
-
+    
         // Return structured response
         return json_encode([
             "status" => "success",
@@ -393,6 +416,7 @@ class PaymentController {
             ]
         ]);
     }
+    
 
     // Process PayDirect Payment (IP validation already done in the route)
     // public function processPaydirectPayment($payload) {
