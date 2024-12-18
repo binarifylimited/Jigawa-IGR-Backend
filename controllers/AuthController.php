@@ -124,7 +124,7 @@ class AuthController {
 
     // Check for enumerator users
     private function checkEnumeratorUsers($email, $password) {
-        $query = 'SELECT id, email, password, fullname, agent_id FROM enumerator_users WHERE email = ? LIMIT 1';
+        $query = 'SELECT id, email, tax_number, password, fullname, agent_id FROM enumerator_users WHERE email = ? LIMIT 1';
         $stmt = $this->conn->prepare($query);
         $stmt->bind_param('s', $email);
         $stmt->execute();
@@ -142,7 +142,7 @@ class AuthController {
 
     // Check for tax payer users
     private function checkTaxPayerUsers($email, $password) {
-        $query = 'SELECT t.id, t.email, ts.password, t.first_name, t.surname, t.tax_number, ti.TIN FROM taxpayer t JOIN taxpayer_security ts ON t.id = ts.taxpayer_id JOIN taxpayer_identification ti ON t.id = ti.taxpayer_id WHERE t.email = ? LIMIT 1;';
+        $query = 'SELECT t.id, t.email, ts.password, t.tax_number, t.first_name, t.surname, t.tax_number, ti.TIN FROM taxpayer t JOIN taxpayer_security ts ON t.id = ts.taxpayer_id JOIN taxpayer_identification ti ON t.id = ti.taxpayer_id WHERE t.email = ? LIMIT 1;';
         $stmt = $this->conn->prepare($query);
         $stmt->bind_param('s', $email);
         $stmt->execute();
