@@ -443,7 +443,7 @@ class RegistrationController {
      */
     public function registerTaxpayer($data) {
         // Validate required fields for taxpayer
-        if (!isset($data['first_name'], $data['surname'], $data['email'], $data['phone'], $data['category'])) {
+        if (!isset($data['first_name'], $data['surname'], $data['created_by'], $data['email'], $data['phone'], $data['category'])) {
             echo json_encode(['status' => 'error', 'message' => 'Missing required fields: first_name, surname, email, phone, category']);
             http_response_code(400); // Bad request
             return;
@@ -464,12 +464,13 @@ class RegistrationController {
             $tax_number = $this->generateUniqueTaxNumber();
 
             // Insert taxpayer into 'taxpayer' table
-            $query = "INSERT INTO taxpayer (tax_number, category, first_name, surname, email, phone, state, lga, address, employment_status, number_of_staff, business_own, img, created_time, updated_time) 
-                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+            $query = "INSERT INTO taxpayer (created_by, tax_number, category, first_name, surname, email, phone, state, lga, address, employment_status, number_of_staff, business_own, img, created_time, updated_time) 
+                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
 
             $stmt = $this->conn->prepare($query);
             $stmt->bind_param(
-                'ssssssssssiss',
+                'sssssssssssiss',
+                $data['created_by'],
                 $tax_number,
                 $data['category'],
                 $data['first_name'],
