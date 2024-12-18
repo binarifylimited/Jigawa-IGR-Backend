@@ -184,134 +184,137 @@ class TaxpayerController {
     // Get all taxpayers with filters
     public function getAllTaxpayers($queryParams) {
         // Base query to fetch taxpayers
-        $query = "SELECT id, created_by, tax_number, category, presumptive, first_name, surname, email, phone, 
-                            state, lga, address, employment_status, number_of_staff, business_own, 
-                            created_time, updated_time
-                    FROM taxpayer WHERE 1=1";
+        $query = "SELECT t.id, t.created_by, t.tax_number, t.category, t.presumptive, t.first_name, 
+                         t.surname, t.email, t.phone, t.state, t.lga, t.address, t.employment_status, 
+                         t.number_of_staff, t.business_own, t.created_time, t.updated_time, 
+                         ts.tin_status
+                  FROM taxpayer t
+                  INNER JOIN taxpayer_security ts ON t.id = ts.taxpayer_id
+                  WHERE 1=1";
         $params = [];
         $types = "";
-
+    
         // Apply filters
         if (!empty($queryParams['id'])) {
-            $query .= " AND id = ?";
+            $query .= " AND t.id = ?";
             $params[] = $queryParams['id'];
             $types .= "i";
         }
         if (!empty($queryParams['created_by'])) {
-            $query .= " AND created_by = ?";
+            $query .= " AND t.created_by = ?";
             $params[] = $queryParams['created_by'];
             $types .= "s";
         }
         if (!empty($queryParams['tax_number'])) {
-            $query .= " AND tax_number LIKE ?";
+            $query .= " AND t.tax_number LIKE ?";
             $params[] = '%' . $queryParams['tax_number'] . '%';
             $types .= "s";
         }
         if (!empty($queryParams['category'])) {
-            $query .= " AND category = ?";
+            $query .= " AND t.category = ?";
             $params[] = $queryParams['category'];
             $types .= "s";
         }
         if (!empty($queryParams['presumptive'])) {
-            $query .= " AND presumptive = ?";
+            $query .= " AND t.presumptive = ?";
             $params[] = $queryParams['presumptive'];
             $types .= "s";
         }
         if (!empty($queryParams['first_name'])) {
-            $query .= " AND first_name LIKE ?";
+            $query .= " AND t.first_name LIKE ?";
             $params[] = '%' . $queryParams['first_name'] . '%';
             $types .= "s";
         }
         if (!empty($queryParams['surname'])) {
-            $query .= " AND surname LIKE ?";
+            $query .= " AND t.surname LIKE ?";
             $params[] = '%' . $queryParams['surname'] . '%';
             $types .= "s";
         }
         if (!empty($queryParams['email'])) {
-            $query .= " AND email LIKE ?";
+            $query .= " AND t.email LIKE ?";
             $params[] = '%' . $queryParams['email'] . '%';
             $types .= "s";
         }
         if (!empty($queryParams['phone'])) {
-            $query .= " AND phone = ?";
+            $query .= " AND t.phone = ?";
             $params[] = $queryParams['phone'];
             $types .= "s";
         }
         if (!empty($queryParams['state'])) {
-            $query .= " AND state = ?";
+            $query .= " AND t.state = ?";
             $params[] = $queryParams['state'];
             $types .= "s";
         }
         if (!empty($queryParams['lga'])) {
-            $query .= " AND lga = ?";
+            $query .= " AND t.lga = ?";
             $params[] = $queryParams['lga'];
             $types .= "s";
         }
         if (!empty($queryParams['address'])) {
-            $query .= " AND address LIKE ?";
+            $query .= " AND t.address LIKE ?";
             $params[] = '%' . $queryParams['address'] . '%';
             $types .= "s";
         }
         if (!empty($queryParams['employment_status'])) {
-            $query .= " AND employment_status = ?";
+            $query .= " AND t.employment_status = ?";
             $params[] = $queryParams['employment_status'];
             $types .= "s";
         }
         if (!empty($queryParams['number_of_staff_min']) && !empty($queryParams['number_of_staff_max'])) {
-            $query .= " AND number_of_staff BETWEEN ? AND ?";
+            $query .= " AND t.number_of_staff BETWEEN ? AND ?";
             $params[] = $queryParams['number_of_staff_min'];
             $params[] = $queryParams['number_of_staff_max'];
             $types .= "ii";
         }
         if (!empty($queryParams['business_own'])) {
-            $query .= " AND business_own = ?";
+            $query .= " AND t.business_own = ?";
             $params[] = $queryParams['business_own'];
             $types .= "s";
         }
         if (!empty($queryParams['created_time_start']) && !empty($queryParams['created_time_end'])) {
-            $query .= " AND created_time BETWEEN ? AND ?";
+            $query .= " AND t.created_time BETWEEN ? AND ?";
             $params[] = $queryParams['created_time_start'];
             $params[] = $queryParams['created_time_end'];
             $types .= "ss";
         }
         if (!empty($queryParams['updated_time_start']) && !empty($queryParams['updated_time_end'])) {
-            $query .= " AND updated_time BETWEEN ? AND ?";
+            $query .= " AND t.updated_time BETWEEN ? AND ?";
             $params[] = $queryParams['updated_time_start'];
             $params[] = $queryParams['updated_time_end'];
             $types .= "ss";
         }
-
+    
         // Execute query with pagination
         $page = isset($queryParams['page']) ? (int)$queryParams['page'] : 1;
         $limit = isset($queryParams['limit']) ? (int)$queryParams['limit'] : 10;
         $offset = ($page - 1) * $limit;
-
+    
         $query .= " LIMIT ? OFFSET ?";
         $params[] = $limit;
         $params[] = $offset;
         $types .= "ii";
-
+    
         $stmt = $this->conn->prepare($query);
         if ($types) {
             $stmt->bind_param($types, ...$params);
         }
         $stmt->execute();
         $result = $stmt->get_result();
-
+    
         // Fetch results
         $taxpayers = [];
         while ($row = $result->fetch_assoc()) {
             $taxpayers[] = $row;
         }
-
+    
         // Get total count for pagination
-        $totalQuery = "SELECT COUNT(*) as total FROM taxpayer WHERE 1=1";
+        $totalQuery = "SELECT COUNT(*) as total FROM taxpayer";
         $totalStmt = $this->conn->prepare($totalQuery);
         $totalStmt->execute();
         $totalResult = $totalStmt->get_result();
         $total = $totalResult->fetch_assoc()['total'];
         $totalPages = ceil($total / $limit);
-
+    
         // Return JSON response
         return json_encode([
             "status" => "success",
@@ -324,6 +327,7 @@ class TaxpayerController {
             ]
         ]);
     }
+    
 
     // Get taxpayer statistics (total, self-registered, admin-registered)
     public function getTaxpayerStatistics() {
