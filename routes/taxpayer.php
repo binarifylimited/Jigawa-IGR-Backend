@@ -57,3 +57,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $uri === '/get-taxpayer-statistics')
     echo $response;
     exit;
 }
+
+// Route: Update TIN status
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $uri === '/update-tin-status') {
+    $input = json_decode(file_get_contents('php://input'), true);
+    $response = $taxpayerController->updateTinStatus($input);
+
+    // Set response header and output the response in JSON format
+    header('Content-Type: application/json');
+    echo $response;
+    exit;
+}

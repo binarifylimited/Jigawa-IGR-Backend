@@ -366,4 +366,37 @@ class TaxpayerController {
             ]);
         }
     }
+
+    // Update TIN status of a taxpayer
+    public function updateTinStatus($input) {
+        // Validate input
+        if (empty($input['tax_number']) && empty($input['phone']) && empty($input['email'])) {
+            return json_encode(["status" => "error", "message" => "Provide tax_number, phone, or email"]);
+        }
+        if (empty($input['tin_status']) || !in_array($input['tin_status'], ['issued', 'pending'])) {
+            return json_encode(["status" => "error", "message" => "TIN status must be either 'Issued' or 'Pending'"]);
+        }
+
+        // Determine the identifier (tax_number, phone, or email)
+        $identifier = !empty($input['tax_number']) ? $input['tax_number'] : (!empty($input['phone']) ? $input['phone'] : $input['email']);
+        $tinStatus = $input['tin_status'];
+
+        // Query to update TIN status
+        $query = "
+            UPDATE taxpayer_security ts
+            INNER JOIN taxpayer t ON t.id = ts.taxpayer_id
+            SET ts.tin_status = ?
+            WHERE t.tax_number = ? OR t.phone = ? OR t.email = ?
+        ";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bind_param("ssss", $tinStatus, $identifier, $identifier, $identifier);
+        $stmt->execute();
+
+        // Check if the update was successful
+        if ($stmt->affected_rows > 0) {
+            return json_encode(["status" => "success", "message" => "TIN status updated successfully"]);
+        } else {
+            return json_encode(["status" => "error", "message" => "Failed to update TIN status or no changes were made"]);
+        }
+    }
 }
