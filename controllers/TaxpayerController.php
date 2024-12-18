@@ -324,4 +324,46 @@ class TaxpayerController {
             ]
         ]);
     }
+
+    // Get taxpayer statistics (total, self-registered, admin-registered)
+    public function getTaxpayerStatistics() {
+        // Query to count total taxpayers
+        $totalQuery = "SELECT COUNT(*) AS total FROM taxpayer";
+
+        // Query to count self-registered taxpayers
+        $selfQuery = "SELECT COUNT(*) AS total_self FROM taxpayer WHERE created_by = 'self'";
+
+        // Query to count admin-registered taxpayers
+        $adminQuery = "SELECT COUNT(*) AS total_admin FROM taxpayer WHERE created_by = 'admin'";
+
+        try {
+            // Execute total taxpayers query
+            $totalResult = $this->conn->query($totalQuery);
+            $totalCount = $totalResult->fetch_assoc()['total'];
+
+            // Execute self-registered taxpayers query
+            $selfResult = $this->conn->query($selfQuery);
+            $selfCount = $selfResult->fetch_assoc()['total_self'];
+
+            // Execute admin-registered taxpayers query
+            $adminResult = $this->conn->query($adminQuery);
+            $adminCount = $adminResult->fetch_assoc()['total_admin'];
+
+            // Return JSON response
+            return json_encode([
+                "status" => "success",
+                "data" => [
+                    "total_registered_taxpayers" => (int)$totalCount,
+                    "total_self_registered_taxpayers" => (int)$selfCount,
+                    "total_admin_registered_taxpayers" => (int)$adminCount
+                ]
+            ]);
+        } catch (Exception $e) {
+            return json_encode([
+                "status" => "error",
+                "message" => "Failed to fetch statistics",
+                "error" => $e->getMessage()
+            ]);
+        }
+    }
 }

@@ -47,3 +47,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $uri === '/get-taxpayers') {
     echo $response;
     exit;
 }
+
+// Route: Get total registered taxpayers
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && $uri === '/get-taxpayer-statistics') {
+    $response = $taxpayerController->getTaxpayerStatistics();
+
+    // Set response header and output the response in JSON format
+    header('Content-Type: application/json');
+    echo $response;
+    exit;
+}
