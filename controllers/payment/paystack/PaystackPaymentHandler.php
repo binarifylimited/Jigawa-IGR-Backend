@@ -17,7 +17,8 @@ class PaystackPaymentHandler {
         // Step 2: Use null coalescing operators to check if the fields exist or set defaults
         $metadata = $payload['data']['metadata'] ?? null;
         $customFields = $metadata['custom_fields'][0] ?? null;
-
+        $dateTime = new DateTime($payload['data']['paid_at']);
+        $mysqlDate = $dateTime->format('Y-m-d H:i:s');
         return [
             'invoice_number' => $customFields['value'] ?? null,  // Check if custom_fields[0] exists
             'payment_channel' => 'PayStack', // Hardcoded for PayStack
@@ -26,7 +27,7 @@ class PaystackPaymentHandler {
             'payment_reference_number' => $payload['data']['reference'] ?? null, // Check if reference exists
             'receipt_number' => $customFields['value'] ?? null, // Same as invoice_number if missing
             'amount_paid' => isset($payload['data']['amount']) ? $payload['data']['amount'] / 100 : 0, // Convert from kobo to Naira
-            'date_payment_created' => $payload['data']['paid_at'] ?? null // Check if paid_at exists
+            'date_payment_created' => $mysqlDate ?? null // Check if paid_at exists
         ];
     }
 }
