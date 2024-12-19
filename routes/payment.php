@@ -15,7 +15,7 @@ $paymentController = new PaymentController();
 
 // Route: Process Paystack Payment
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $uri === '/process-paystack-payment') {
-    $paystackSecret = 'pk_test_a00bd73aad869339803b75183303647b5dcd8305'; // Replace with your actual secret key
+    $paystackSecret = 'sk_test_8235860c9dd930e6370aac4a6e66e38b8150bff8'; // Replace with your actual secret key
 
     // Verify Paystack Signature
     if (VerificationHelper::verifyPaystackSignature($paystackSecret)) {
