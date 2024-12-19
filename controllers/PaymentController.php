@@ -304,6 +304,12 @@ class PaymentController {
             $params[] = $queryParams['invoice_number'];
             $types .= "s";
         }
+
+        if (!empty($queryParams['tax_number'])) {
+            $query .= " AND pc.user_id = ?";
+            $params[] = $queryParams['tax_number'];
+            $types .= "s";
+        }
     
         if (!empty($queryParams['payment_reference_number'])) {
             $query .= " AND pc.payment_reference_number = ?";
