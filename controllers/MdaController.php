@@ -383,4 +383,65 @@ class MdaController {
         ]);
     }
     
+
+    public function deleteMda($mda_id) {
+        // Ensure the MDA exists
+        $check_query = "SELECT id FROM mda WHERE id = ? AND account_status = 'activate'";
+        $stmt = $this->conn->prepare($check_query);
+        $stmt->bind_param('i', $mda_id);
+        $stmt->execute();
+        $stmt->store_result();
+    
+        if ($stmt->num_rows == 0) {
+            echo json_encode(['status' => 'error', 'message' => 'MDA not found']);
+            http_response_code(404); // Not Found
+            $stmt->close();
+            return;
+        }
+    
+        // Start transaction to ensure safe deletion
+        $this->conn->begin_transaction();
+    
+        try {
+        // Deactivate associated revenue heads
+        $deactivate_revenue_query = "UPDATE revenue_heads SET account_status = 'deactivate' WHERE mda_id = ?";
+        $stmt = $this->conn->prepare($deactivate_revenue_query);
+        $stmt->bind_param('i', $mda_id);
+        if (!$stmt->execute()) {
+            throw new Exception('Error deactivating revenue heads: ' . $stmt->error);
+        }
+
+        // Deactivate associated MDA contact information
+        $deactivate_contact_info_query = "UPDATE mda_contact_info SET account_status = 'deactivate' WHERE mda_id = ?";
+        $stmt = $this->conn->prepare($deactivate_contact_info_query);
+        $stmt->bind_param('i', $mda_id);
+        if (!$stmt->execute()) {
+            throw new Exception('Error deactivating MDA contact info: ' . $stmt->error);
+        }
+
+        // Finally, deactivate the MDA
+        $deactivate_mda_query = "UPDATE mda SET account_status = 'deactivate' WHERE id = ?";
+        $stmt = $this->conn->prepare($deactivate_mda_query);
+        $stmt->bind_param('i', $mda_id);
+        if (!$stmt->execute()) {
+            throw new Exception('Error deactivating MDA: ' . $stmt->error);
+        }
+    
+        // Commit transaction
+        $this->conn->commit();
+        echo json_encode(['status' => 'success', 'message' => 'MDA deactivated successfully']);
+        $stmt->close();
+        } catch (Exception $e) {
+            // Rollback transaction in case of an error
+            $this->conn->rollback();
+            echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        }
+
+        // {
+        //     "mda_id": 123
+        // }
+        
+    }
+
+
 }
