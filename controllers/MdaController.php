@@ -553,6 +553,93 @@ class MdaController {
             ]
         ]);
     }
+
+    public function getInvoicesByMda($queryParams) {
+        // Ensure MDA ID is provided
+        if (empty($queryParams['mda_id'])) {
+            echo json_encode(['status' => 'error', 'message' => 'MDA ID is required']);
+            http_response_code(400);
+            return;
+        }
+    
+        // Fetch all revenue head IDs for the specified MDA
+        $revenueHeadQuery = "SELECT id FROM revenue_heads WHERE mda_id = ?";
+        $stmt = $this->conn->prepare($revenueHeadQuery);
+        $stmt->bind_param('i', $queryParams['mda_id']);
+        $stmt->execute();
+        $result = $stmt->get_result();
+    
+        $revenueHeadIds = [];
+        while ($row = $result->fetch_assoc()) {
+            $revenueHeadIds[] = $row['id'];
+        }
+        $stmt->close();
+    
+        // If no revenue heads found, return an empty result
+        if (empty($revenueHeadIds)) {
+            echo json_encode(['status' => 'success', 'data' => [], 'pagination' => ['total_records' => 0]]);
+            return;
+        }
+    
+        // Base invoice query
+        $invoiceQuery = "SELECT * FROM invoices WHERE 1=1";
+    
+        // Add optional status filter
+        $params = [];
+        $types = "";
+    
+        if (!empty($queryParams['status'])) {
+            $invoiceQuery .= " AND payment_status = ?";
+            $params[] = $queryParams['status'];
+            $types .= "s";
+        }
+    
+        $stmt = $this->conn->prepare($invoiceQuery);
+        if (!empty($types)) {
+            $stmt->bind_param($types, ...$params);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+    
+        $invoices = [];
+        while ($row = $result->fetch_assoc()) {
+            $revenueHeads = json_decode($row['revenue_head'], true);
+    
+            foreach ($revenueHeads as $revenueHead) {
+                if (in_array($revenueHead['revenue_head_id'], $revenueHeadIds)) {
+                    $invoices[] = $row;
+                    break; // Only add the invoice once, even if multiple revenue heads match
+                }
+            }
+        }
+        $stmt->close();
+    
+        // Pagination
+        $page = isset($queryParams['page']) ? $queryParams['page'] : 1;
+        $limit = isset($queryParams['limit']) ? $queryParams['limit'] : 10;
+        $offset = ($page - 1) * $limit;
+    
+        $paginatedInvoices = array_slice($invoices, $offset, $limit);
+        $totalRecords = count($invoices);
+        $totalPages = ceil($totalRecords / $limit);
+    
+        // Return the result
+        echo json_encode([
+            "status" => "success",
+            "data" => $paginatedInvoices,
+            "pagination" => [
+                "current_page" => $page,
+                "per_page" => $limit,
+                "total_pages" => $totalPages,
+                "total_records" => $totalRecords
+            ]
+        ]);
+    }
+    
+    
+    
+    
+    
     
 
 

@@ -218,6 +218,25 @@ if ($request_method == 'GET' && $uri == '/get-mda-users') {
 }
 
 
+// Route: Get invoices under MDAs and Specific MDAs
+if ($request_method == 'GET' && $uri == '/get-mda-invoices') {
+    $filters = [
+        'mda_id' => isset($_GET['mda_id']) ? (int)$_GET['mda_id'] : null,
+        'invoice_number' => isset($_GET['invoice_number']) ? $_GET['invoice_number'] : null,
+        'status' => isset($_GET['status']) ? $_GET['status'] : null,
+        'start_date' => isset($_GET['start_date']) ? $_GET['start_date'] : null,
+        'end_date' => isset($_GET['end_date']) ? $_GET['end_date'] : null,
+        'page' => isset($_GET['page']) ? (int)$_GET['page'] : 1,
+        'limit' => isset($_GET['limit']) ? (int)$_GET['limit'] : 10
+    ];
+
+    $mdaController->getInvoicesByMda(array_filter($filters));
+    exit;
+}
+
+
+
+
 
 
 // If no matching route is found
