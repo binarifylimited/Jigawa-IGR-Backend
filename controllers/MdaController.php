@@ -260,69 +260,128 @@ class MdaController {
     /**
      * Fetch MDA by various filters (id, fullname, mda_code, email, allow_payment, status).
      */
-    public function getMdaByFilters($filters) {
-        // Base query
-        $query = "SELECT * FROM mda WHERE 1 = 1"; // 1 = 1 is a dummy condition to simplify appending other conditions
+    public function getMdaByFilters($queryParams) {
+        // Base query to fetch MDA details and count revenue heads
+        $query = "
+            SELECT 
+                m.id, 
+                m.fullname, 
+                m.mda_code, 
+                m.email, 
+                m.phone, 
+                m.industry, 
+                m.allow_payment, 
+                m.status, 
+                m.time_in,
+                COUNT(rh.id) AS total_revenue_heads
+            FROM mda m
+            LEFT JOIN revenue_heads rh ON m.id = rh.mda_id
+            WHERE 1=1
+        ";
+    
         $params = [];
-        $types = '';
-
-        // Add conditions dynamically
-        if (isset($filters['id'])) {
-            $query .= " AND id = ?";
-            $params[] = $filters['id'];
-            $types .= 'i';
+        $types = "";
+    
+        // Apply filters based on query parameters
+        if (!empty($queryParams['id'])) {
+            $query .= " AND m.id = ?";
+            $params[] = $queryParams['id'];
+            $types .= "i";
         }
-
-        if (isset($filters['fullname'])) {
-            // Using LIKE for partial matching on fullname
-            $query .= " AND fullname LIKE ?";
-            $params[] = '%' . $filters['fullname'] . '%';
-            $types .= 's';
+    
+        if (!empty($queryParams['fullname'])) {
+            $query .= " AND m.fullname LIKE ?";
+            $params[] = '%' . $queryParams['fullname'] . '%';
+            $types .= "s";
         }
-
-        if (isset($filters['mda_code'])) {
-            $query .= " AND mda_code = ?";
-            $params[] = $filters['mda_code'];
-            $types .= 's';
+    
+        if (!empty($queryParams['mda_code'])) {
+            $query .= " AND m.mda_code = ?";
+            $params[] = $queryParams['mda_code'];
+            $types .= "s";
         }
-
-        if (isset($filters['email'])) {
-            $query .= " AND email = ?";
-            $params[] = $filters['email'];
-            $types .= 's';
+    
+        if (!empty($queryParams['allow_payment'])) {
+            $query .= " AND m.allow_payment = ?";
+            $params[] = $queryParams['allow_payment'];
+            $types .= "i";
         }
-
-        if (isset($filters['allow_payment'])) {
-            $query .= " AND allow_payment = ?";
-            $params[] = $filters['allow_payment'];
-            $types .= 'i';
+    
+        if (!empty($queryParams['status'])) {
+            $query .= " AND m.status = ?";
+            $params[] = $queryParams['status'];
+            $types .= "i";
         }
-
-        if (isset($filters['status'])) {
-            $query .= " AND status = ?";
-            $params[] = $filters['status'];
-            $types .= 'i';
+    
+        if (!empty($queryParams['email'])) {
+            $query .= " AND m.email LIKE ?";
+            $params[] = '%' . $queryParams['email'] . '%';
+            $types .= "s";
         }
-
-        // Prepare and bind the query
+    
+        // Group by MDA ID to calculate total revenue heads
+        $query .= " GROUP BY m.id";
+    
+        // Add pagination if provided
+        $page = isset($queryParams['page']) ? (int)$queryParams['page'] : 1;
+        $limit = isset($queryParams['limit']) ? (int)$queryParams['limit'] : 10;
+        $offset = ($page - 1) * $limit;
+    
+        $query .= " LIMIT ? OFFSET ?";
+        $params[] = $limit;
+        $params[] = $offset;
+        $types .= "ii";
+    
+        // Prepare and execute the query
         $stmt = $this->conn->prepare($query);
-
-        if (!empty($params)) {
-            $stmt->bind_param($types, ...$params); // Spread operator for dynamic params
+        if ($types) {
+            $stmt->bind_param($types, ...$params);
         }
-
         $stmt->execute();
         $result = $stmt->get_result();
-        $mdas = $result->fetch_all(MYSQLI_ASSOC);
-
-        if (count($mdas) > 0) {
-            // Return matching MDA(s)
-            echo json_encode(['status' => 'success', 'data' => $mdas]);
-        } else {
-            echo json_encode(['status' => 'error', 'message' => 'No matching MDA found']);
-            http_response_code(404); // Not found
+    
+        // Fetch MDAs and calculate total remittance for each
+        $mdas = [];
+        while ($row = $result->fetch_assoc()) {
+            $mdaId = $row['id'];
+    
+            // Calculate total remittance for the MDA
+            $remittanceQuery = "SELECT revenue_head, payment_status FROM invoices WHERE payment_status = 'paid'";
+            $remittanceResult = $this->conn->query($remittanceQuery);
+    
+            $totalRemittance = 0;
+    
+            while ($invoice = $remittanceResult->fetch_assoc()) {
+                $revenueHeads = json_decode($invoice['revenue_head'], true);
+    
+                foreach ($revenueHeads as $revenueHead) {
+                    // Check if the revenue head belongs to this MDA
+                    $revenueHeadQuery = "SELECT mda_id FROM revenue_heads WHERE id = ?";
+                    $stmtRevenueHead = $this->conn->prepare($revenueHeadQuery);
+                    $stmtRevenueHead->bind_param('i', $revenueHead['revenue_head_id']);
+                    $stmtRevenueHead->execute();
+                    $revenueHeadResult = $stmtRevenueHead->get_result();
+                    $revenueHeadData = $revenueHeadResult->fetch_assoc();
+    
+                    if ($revenueHeadData['mda_id'] == $mdaId) {
+                        $totalRemittance += $revenueHead['amount'];
+                    }
+    
+                    $stmtRevenueHead->close();
+                }
+            }
+    
+            // Add total remittance to the MDA details
+            $row['total_remittance'] = $totalRemittance;
+    
+            $mdas[] = $row;
         }
-
-        $stmt->close();
+    
+        // Return structured response
+        echo json_encode([
+            "status" => "success",
+            "data" => $mdas
+        ]);
     }
+    
 }
