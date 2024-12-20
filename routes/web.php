@@ -59,11 +59,11 @@ if ($request_method == 'POST' && $uri == '/register-mda') {
     // Call the register method in RegistrationController
 
     // Optionally check if the authenticated user has the role to create an admin
-    if ($decoded_token['role'] !== 'super_admin') {
-        echo json_encode(['status' => 'error', 'message' => 'Unauthorized: Only super admins can register new users']);
-        http_response_code(403); // Forbidden
-        exit;
-    }
+    // if ($decoded_token['role'] !== 'super_admin') {
+    //     echo json_encode(['status' => 'error', 'message' => 'Unauthorized: Only super admins can register new users']);
+    //     http_response_code(403); // Forbidden
+    //     exit;
+    // }
     $input = json_decode(file_get_contents('php://input'), true);
     $registrationController->registerMDAUser($input);
     exit;
