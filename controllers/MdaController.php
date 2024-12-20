@@ -443,5 +443,117 @@ class MdaController {
         
     }
 
+    public function getMdaUsers($queryParams) {
+        // Base query to fetch MDA users
+        $query = "
+            SELECT 
+                mu.id,
+                mu.mda_id,
+                mu.name,
+                mu.email,
+                mu.phone,
+                mu.created_at,
+                mu.img,
+                mu.office_name,
+                m.fullname AS mda_name
+            FROM mda_users mu
+            LEFT JOIN mda m ON mu.mda_id = m.id
+            WHERE 1=1
+        ";
+    
+        $params = [];
+        $types = "";
+    
+        // Apply filters
+        if (!empty($queryParams['mda_id'])) {
+            $query .= " AND mu.mda_id = ?";
+            $params[] = $queryParams['mda_id'];
+            $types .= "i";
+        }
+    
+        if (!empty($queryParams['name'])) {
+            $query .= " AND mu.name LIKE ?";
+            $params[] = '%' . $queryParams['name'] . '%';
+            $types .= "s";
+        }
+    
+        if (!empty($queryParams['email'])) {
+            $query .= " AND mu.email LIKE ?";
+            $params[] = '%' . $queryParams['email'] . '%';
+            $types .= "s";
+        }
+    
+        if (!empty($queryParams['phone_number'])) {
+            $query .= " AND mu.phone_number LIKE ?";
+            $params[] = '%' . $queryParams['phone'] . '%';
+            $types .= "s";
+        }
+    
+        if (!empty($queryParams['office_name'])) {
+            $query .= " AND mu.office_name LIKE ?";
+            $params[] = '%' . $queryParams['office_name'] . '%';
+            $types .= "s";
+        }
+    
+        // Add pagination
+        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
+        $offset = ($page - 1) * $limit;
+    
+        $query .= " LIMIT ? OFFSET ?";
+        $params[] = $limit;
+        $params[] = $offset;
+        $types .= "ii";
+    
+        // Prepare and execute the query
+        $stmt = $this->conn->prepare($query);
+        if ($types) {
+            $stmt->bind_param($types, ...$params);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+    
+        // Fetch results
+        $mdaUsers = [];
+        while ($row = $result->fetch_assoc()) {
+            $mdaUsers[] = $row;
+        }
+    
+        // Get total count for pagination
+        $totalQuery = "SELECT COUNT(*) as total FROM mda_users WHERE 1=1";
+        if (!empty($queryParams['mda_id'])) {
+            $totalQuery .= " AND mda_id = " . (int)$queryParams['mda_id'];
+        }
+        if (!empty($queryParams['name'])) {
+            $totalQuery .= " AND name LIKE '%" . $this->conn->real_escape_string($queryParams['name']) . "%'";
+        }
+        if (!empty($queryParams['email'])) {
+            $totalQuery .= " AND email LIKE '%" . $this->conn->real_escape_string($queryParams['email']) . "%'";
+        }
+        if (!empty($queryParams['phone'])) {
+            $totalQuery .= " AND phone LIKE '%" . $this->conn->real_escape_string($queryParams['phone_number']) . "%'";
+        }
+        if (!empty($queryParams['office_name'])) {
+            $totalQuery .= " AND office_name LIKE '%" . $this->conn->real_escape_string($queryParams['office_name']) . "%'";
+        }
+    
+        $totalResult = $this->conn->query($totalQuery);
+        $total = $totalResult->fetch_assoc()['total'];
+        $totalPages = ceil($total / $limit);
+    
+        // Return structured response
+        echo json_encode([
+            "status" => "success",
+            "data" => $mdaUsers,
+            "pagination" => [
+                "current_page" => $page,
+                "per_page" => $limit,
+                "total_pages" => $totalPages,
+                "total_records" => $total
+            ]
+        ]);
+    }
+    
+
 
 }

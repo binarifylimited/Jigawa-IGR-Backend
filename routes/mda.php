@@ -203,6 +203,21 @@ if ($request_method == 'DELETE' && $uri == '/delete-mda') {
     exit;
 }
 
+// Route: Get Users under MDAs and Specific MDAs
+if ($request_method == 'GET' && $uri == '/get-mda-users') {
+    $filters = [
+        'mda_id' => isset($_GET['mda_id']) ? (int)$_GET['mda_id'] : null,
+        'name' => isset($_GET['name']) ? $_GET['name'] : null,
+        'email' => isset($_GET['email']) ? $_GET['email'] : null,
+        'phone_number' => isset($_GET['phone']) ? $_GET['phone'] : null,
+        'office_name' => isset($_GET['office_name']) ? $_GET['office_name'] : null
+    ];
+
+    $mdaController->getMdaUsers(array_filter($filters)); // Filter out null values
+    exit;
+}
+
+
 
 
 // If no matching route is found
