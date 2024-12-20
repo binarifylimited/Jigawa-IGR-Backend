@@ -33,19 +33,20 @@ class MdaController {
 
         try {
             // Insert MDA into 'mda' table
-            $query = "INSERT INTO mda (fullname, mda_code, email, phone, industry, allow_payment, status, time_in) 
-                      VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
-
+            $query = "INSERT INTO mda (fullname, mda_code, email, phone, industry, allow_payment, allow_office_creation, status, time_in) 
+                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+    
             $stmt = $this->conn->prepare($query);
             $stmt->bind_param(
-                'ssssssi',
+                'ssssssss',
                 $data['fullname'],
                 $data['mda_code'],
                 $data['email'],
                 $data['phone'],
                 $data['industry'],
-                $data['allow_payment'], // Default to allow payment (1 = true)
-                $data['status']       // Default status to active (1 = active)
+                $data['allow_payment'], // 'yes' or 'no'
+                $data['allow_office_creation'], // 'yes' or 'no'
+                $data['status'] // 'active' or 'inactive'
             );
 
             if (!$stmt->execute()) {
