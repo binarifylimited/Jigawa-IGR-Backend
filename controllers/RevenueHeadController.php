@@ -342,4 +342,64 @@ class RevenueHeadController {
 
         $stmt->close();
     }
+
+    public function approveRevenueHead($data) {
+        // Validate required fields
+        if (!isset($data['id'])) {
+            echo json_encode(['status' => 'error', 'message' => 'Missing required field: id']);
+            http_response_code(400); // Bad request
+            return;
+        }
+    
+        $id = $data['id'];
+        // $status = 'active'; // Default to approved status
+
+
+           // Check if the revenue head exists
+        $query = "SELECT id, status FROM revenue_heads WHERE id = ? LIMIT 1";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bind_param('i', $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows === 0) {
+            echo json_encode(['status' => 'error', 'message' => 'Revenue head not found']);
+            http_response_code(404); // Not Found
+            $stmt->close();
+            return;
+        }
+
+        $revenue_head = $result->fetch_assoc();
+
+        // Check if the revenue head is already active
+        if ($revenue_head['status'] === 'active') {
+            echo json_encode(['status' => 'error', 'message' => 'Revenue head is already active']);
+            http_response_code(400); // Bad Request
+            $stmt->close();
+            return;
+        }
+        
+            // Update status of the revenue head 
+        $update_query = "UPDATE revenue_heads SET status = 'active' WHERE id = ?";
+        $stmt = $this->conn->prepare($update_query);
+        $stmt->bind_param('i', $id);
+
+        if ($stmt->execute()) {
+            echo json_encode(['status' => 'success', 'message' => 'Revenue head approved successfully']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Failed to approve revenue head. Error: ' . $stmt->error]);
+            http_response_code(500); // Internal Server Error
+        }
+        
+            $stmt->close();
+
+            // PUT {{BASE_URL}}/approve-revenue-head/1
+            // {
+            //     "id": 123
+            // }
+
+    }
+
+
+
 }

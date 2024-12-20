@@ -159,6 +159,52 @@ if ($request_method == 'GET' && $uri == '/get-revenue-head') {
     exit;
 }
 
+
+// Route: Approve Revenue Head Status  (POST)
+if ($request_method == 'PUT' && $uri == '/approve-revenue-head') {
+    // $decoded_token = authenticate();  // Authenticate the request
+    // // Call the register method in RegistrationController
+
+    // // Optionally check if the authenticated user has the role to create an admin
+    // if ($decoded_token['role'] !== 'super_admin') {
+    //     echo json_encode(['status' => 'error', 'message' => 'Unauthorized: Only super admins can register new users']);
+    //     http_response_code(403); // Forbidden
+    //     exit;
+    // }
+    $input = json_decode(file_get_contents('php://input'), true);
+    $revenueHeadController->approveRevenueHead($input);
+    exit;
+}
+
+
+// Route: Delete MDA
+if ($request_method == 'DELETE' && $uri == '/delete-mda') {
+    // You may want to authenticate the request, here’s an example
+    // $decoded_token = authenticate();
+
+    // Optionally check if the authenticated user has the role to delete
+    // if ($decoded_token['role'] !== 'super_admin') {
+    //     echo json_encode(['status' => 'error', 'message' => 'Unauthorized: Only super admins can delete MDAs']);
+    //     http_response_code(403); // Forbidden
+    //     exit;
+    // }
+
+    // Get the input data from the request body (the ID of the MDA to delete)
+    $input = json_decode(file_get_contents('php://input'), true);
+
+    // Check if mda_id is provided in the input
+    if (isset($input['mda_id'])) {
+        $mda_id = $input['mda_id']; // Extract mda_id
+        $mdaController->deleteMda($mda_id); // Call the delete method
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'MDA ID is required']);
+        http_response_code(400); // Bad Request
+    }
+    exit;
+}
+
+
+
 // If no matching route is found
 http_response_code(404);
 echo json_encode(['status' => 'error:'.$uri, 'message' => 'Endpoint not found']);

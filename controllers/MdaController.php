@@ -264,10 +264,14 @@ class MdaController {
         // Base query to fetch MDA details and count revenue heads
         $query = "
             SELECT 
-                m.*,
-                COUNT(rh.id) AS total_revenue_heads
+            m.*, 
+            COUNT(rh.id) AS total_revenue_heads,
+            mda_contact_info.state, 
+            mda_contact_info.lga, 
+            mda_contact_info.address
             FROM mda m
             LEFT JOIN revenue_heads rh ON m.id = rh.mda_id
+            LEFT JOIN mda_contact_info ON m.id = mda_contact_info.mda_id
             WHERE 1=1
         ";
     
@@ -376,4 +380,65 @@ class MdaController {
         ]);
     }
     
+
+    public function deleteMda($mda_id) {
+        // Ensure the MDA exists
+        $check_query = "SELECT id FROM mda WHERE id = ?";
+        $stmt = $this->conn->prepare($check_query);
+        $stmt->bind_param('i', $mda_id);
+        $stmt->execute();
+        $stmt->store_result();
+    
+        if ($stmt->num_rows == 0) {
+            echo json_encode(['status' => 'error', 'message' => 'MDA not found']);
+            http_response_code(404); // Not Found
+            $stmt->close();
+            return;
+        }
+    
+        // Start transaction to ensure safe deletion
+        $this->conn->begin_transaction();
+    
+        try {
+            // Delete associated revenue heads first (if any)
+            $delete_revenue_query = "DELETE FROM revenue_heads WHERE mda_id = ?";
+            $stmt = $this->conn->prepare($delete_revenue_query);
+            $stmt->bind_param('i', $mda_id);
+            if (!$stmt->execute()) {
+                throw new Exception('Error deleting revenue heads: ' . $stmt->error);
+            }
+    
+            // Delete associated MDA contact information (if any)
+            $delete_contact_info_query = "DELETE FROM mda_contact_info WHERE mda_id = ?";
+            $stmt = $this->conn->prepare($delete_contact_info_query);
+            $stmt->bind_param('i', $mda_id);
+            if (!$stmt->execute()) {
+                throw new Exception('Error deleting MDA contact info: ' . $stmt->error);
+            }
+    
+            // Finally, delete the MDA
+            $delete_mda_query = "DELETE FROM mda WHERE id = ?";
+            $stmt = $this->conn->prepare($delete_mda_query);
+            $stmt->bind_param('i', $mda_id);
+            if (!$stmt->execute()) {
+                throw new Exception('Error deleting MDA: ' . $stmt->error);
+            }
+    
+            // Commit transaction
+            $this->conn->commit();
+            echo json_encode(['status' => 'success', 'message' => 'MDA deleted successfully']);
+            $stmt->close();
+        } catch (Exception $e) {
+            // Rollback transaction in case of an error
+            $this->conn->rollback();
+            echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        }
+
+        // {
+        //     "mda_id": 123
+        // }
+        
+    }
+
+
 }
