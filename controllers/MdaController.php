@@ -264,15 +264,7 @@ class MdaController {
         // Base query to fetch MDA details and count revenue heads
         $query = "
             SELECT 
-                m.id, 
-                m.fullname, 
-                m.mda_code, 
-                m.email, 
-                m.phone, 
-                m.industry, 
-                m.allow_payment, 
-                m.status, 
-                m.time_in,
+                m.*,
                 COUNT(rh.id) AS total_revenue_heads
             FROM mda m
             LEFT JOIN revenue_heads rh ON m.id = rh.mda_id
