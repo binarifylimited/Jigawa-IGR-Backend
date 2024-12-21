@@ -667,7 +667,7 @@ class MdaController {
         $invoiceQuery = "
         SELECT 
             i.*,
-            p.payment_reference_number
+            p.*
         FROM 
             invoices i
         INNER JOIN 
