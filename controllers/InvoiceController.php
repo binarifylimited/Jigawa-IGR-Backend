@@ -321,9 +321,93 @@ class InvoiceController {
     
         return $details;
     }
+
+    public function getInvoiceSummary($mda_id = null) {
+        // Initialize totals
+        $totalInvoices = 0;
+        $totalAmountInvoiced = 0;
+        $totalAmountPaid = 0;
+    
+        // Fetch revenue head IDs for the specified MDA (if mda_id is provided)
+        $revenueHeadIds = [];
+        if ($mda_id) {
+            $revenueHeadQuery = "SELECT id FROM revenue_heads WHERE mda_id = ?";
+            $stmt = $this->conn->prepare($revenueHeadQuery);
+            $stmt->bind_param('i', $mda_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+    
+            while ($row = $result->fetch_assoc()) {
+                $revenueHeadIds[] = $row['id'];
+            }
+            $stmt->close();
+    
+            // If no revenue heads are found for the MDA, return early with zero totals
+            if (empty($revenueHeadIds)) {
+                echo json_encode([
+                    "status" => "success",
+                    "data" => [
+                        "total_invoices" => 0,
+                        "total_amount_invoiced" => 0,
+                        "total_amount_paid" => 0,
+                    ]
+                ]);
+                return;
+            }
+        }
+    
+        // Fetch all invoices
+        $invoiceQuery = "SELECT revenue_head, payment_status, amount_paid FROM invoices";
+        $stmt = $this->conn->prepare($invoiceQuery);
+        $stmt->execute();
+        $result = $stmt->get_result();
+    
+        // Loop through invoices and calculate totals
+        while ($row = $result->fetch_assoc()) {
+            // Decode the revenue_head JSON
+            $revenueHeads = json_decode($row['revenue_head'], true);
+            $includeInvoice = false;
+            $invoiceInvoicedAmount = 0;
+            $invoicePaidAmount = 0;
+    
+            // Loop through revenue heads in the JSON
+            foreach ($revenueHeads as $revenueHead) {
+                // Check if the revenue head belongs to the specified MDA
+                if (!$mda_id || in_array($revenueHead['revenue_head_id'], $revenueHeadIds)) {
+                    $includeInvoice = true;
+                    $invoiceInvoicedAmount += (float)$revenueHead['amount']; // Add to total amount invoiced
+                }
+            }
+    
+            // Count the invoice and add amounts if it matches the MDA filter
+            if ($includeInvoice) {
+                $totalInvoices++;
+                $totalAmountInvoiced += $invoiceInvoicedAmount;
+    
+                if ($row['payment_status'] === 'paid') {
+                    $totalAmountPaid += $invoiceInvoicedAmount; // Use only the relevant revenue head amounts
+                }
+            }
+        }
+        $stmt->close();
+    
+        // Return structured response
+        echo json_encode([
+            "status" => "success",
+            "data" => [
+                "total_invoices" => $totalInvoices,
+                "total_amount_invoiced" => $totalAmountInvoiced,
+                "total_amount_paid" => $totalAmountPaid,
+            ]
+        ]);
+    }
+    
+    
+}
+
     
 
     
     
     
-}
+

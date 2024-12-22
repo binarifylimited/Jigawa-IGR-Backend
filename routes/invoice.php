@@ -48,4 +48,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $uri === '/get-invoices') {
     exit;
 }
 
+if ($request_method == 'GET' && $uri == '/invoices-summary') {
+    $mda_id = isset($_GET['mda_id']) ? (int)$_GET['mda_id'] : null; // Optional MDA filter
+    $invoiceController->getInvoiceSummary($mda_id);
+    exit;
+}
+
+
 // You can add more invoice-related routes here (for example, fetching invoice details, updating an invoice, etc.)
