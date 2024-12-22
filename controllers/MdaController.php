@@ -562,21 +562,21 @@ class MdaController {
             return;
         }
     
-        // Fetch all revenue head IDs for the specified MDA
-        $revenueHeadQuery = "SELECT id FROM revenue_heads WHERE mda_id = ?";
+        // Fetch all revenue head IDs and names for the specified MDA
+        $revenueHeadQuery = "SELECT id, item_name FROM revenue_heads WHERE mda_id = ?";
         $stmt = $this->conn->prepare($revenueHeadQuery);
         $stmt->bind_param('i', $queryParams['mda_id']);
         $stmt->execute();
         $result = $stmt->get_result();
     
-        $revenueHeadIds = [];
+        $revenueHeadMap = [];
         while ($row = $result->fetch_assoc()) {
-            $revenueHeadIds[] = $row['id'];
+            $revenueHeadMap[$row['id']] = $row['item_name'];
         }
         $stmt->close();
     
         // If no revenue heads found, return an empty result
-        if (empty($revenueHeadIds)) {
+        if (empty($revenueHeadMap)) {
             echo json_encode(['status' => 'success', 'data' => [], 'pagination' => ['total_records' => 0]]);
             return;
         }
@@ -604,19 +604,30 @@ class MdaController {
         $invoices = [];
         while ($row = $result->fetch_assoc()) {
             $revenueHeads = json_decode($row['revenue_head'], true);
+            $associatedRevenueHeads = [];
+            $includeInvoice = false;
     
             foreach ($revenueHeads as $revenueHead) {
-                if (in_array($revenueHead['revenue_head_id'], $revenueHeadIds)) {
-                    $invoices[] = $row;
-                    break; // Only add the invoice once, even if multiple revenue heads match
+                if (array_key_exists($revenueHead['revenue_head_id'], $revenueHeadMap)) {
+                    $includeInvoice = true;
+                    $associatedRevenueHeads[] = [
+                        'revenue_head_id' => $revenueHead['revenue_head_id'],
+                        'item_name' => $revenueHeadMap[$revenueHead['revenue_head_id']],
+                        'amount' => $revenueHead['amount']
+                    ];
                 }
+            }
+    
+            if ($includeInvoice) {
+                $row['associated_revenue_heads'] = $associatedRevenueHeads;
+                $invoices[] = $row;
             }
         }
         $stmt->close();
     
         // Pagination
-        $page = isset($queryParams['page']) ? $queryParams['page'] : 1;
-        $limit = isset($queryParams['limit']) ? $queryParams['limit'] : 10;
+        $page = isset($queryParams['page']) ? (int)$queryParams['page'] : 1;
+        $limit = isset($queryParams['limit']) ? (int)$queryParams['limit'] : 10;
         $offset = ($page - 1) * $limit;
     
         $paginatedInvoices = array_slice($invoices, $offset, $limit);
@@ -635,6 +646,7 @@ class MdaController {
             ]
         ]);
     }
+    
 
     public function getInvoicesWithPaymentInfoByMda($queryParams) {
         if (empty($queryParams['mda_id'])) {
