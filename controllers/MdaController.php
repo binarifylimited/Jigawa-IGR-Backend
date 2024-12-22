@@ -664,22 +664,29 @@ class MdaController {
         }
     
         // Base invoice query
-        $invoiceQuery = "
-            SELECT 
-                inv.*,
-                JSON_UNQUOTE(JSON_EXTRACT(inv.revenue_head, '$')) AS revenue_heads,
-                pc.payment_channel,
-                pc.payment_method,
-                pc.payment_bank,
-                pc.payment_reference_number,
-                pc.receipt_number,
-                pc.amount_paid AS payment_amount,
-                pc.date_payment_created
-            FROM invoices inv
-            LEFT JOIN payment_collection pc ON inv.invoice_number = pc.invoice_number
-            WHERE inv.payment_status = 'paid'
-        ";
-    
+        $invoiceQuery = "SELECT 
+            inv.*,
+            rh.item_name AS revenue_head_name,
+            rh.category AS revenue_head_category,
+            rh.amount AS revenue_head_amount,
+            pc.payment_channel,
+            pc.payment_method,
+            pc.payment_bank,
+            pc.payment_reference_number,
+            pc.receipt_number,
+            pc.amount_paid AS payment_amount,
+            pc.date_payment_created,
+            pc.timeIn AS payment_time,
+            tp.*
+        FROM invoices inv
+        LEFT JOIN payment_collection pc ON inv.invoice_number = pc.invoice_number
+        LEFT JOIN taxpayer tp ON inv.tax_number = tp.tax_number
+        LEFT JOIN revenue_heads rh ON JSON_CONTAINS(
+            inv.revenue_head, 
+            JSON_OBJECT('revenue_head_id', rh.id)
+        )
+        WHERE inv.payment_status = 'paid' ";
+
         // Add optional status filter
         $params = [];
         $types = "";
@@ -689,6 +696,12 @@ class MdaController {
             $params[] = $queryParams['status'];
             $types .= "s";
         }
+
+        if (!empty($queryParams['invoice_number'])) {
+            $query .= " AND inv.invoice_number LIKE ?";
+            $params[] = '%' . $queryParams['invoice_number'] . '%';
+            $types .= "s";
+        } 
     
         $stmt = $this->conn->prepare($invoiceQuery);
         if (!empty($types)) {
