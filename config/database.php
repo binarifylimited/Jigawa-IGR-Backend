@@ -3,7 +3,7 @@ class Database {
     private $host = 'localhost';      // Database host
     private $db_name = 'jigawa'; // Your database name
     private $username = 'root';// Database username
-    private $password = '';// Database password
+    private $password = 'root';// Database password
     public $conn;
 
     // Get the database connection using MySQLi
