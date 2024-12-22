@@ -637,37 +637,41 @@ class MdaController {
     }
 
     public function getInvoicesWithPaymentInfoByMda($queryParams) {
-        // Ensure MDA ID is provided
         if (empty($queryParams['mda_id'])) {
             echo json_encode(['status' => 'error', 'message' => 'MDA ID is required']);
             http_response_code(400);
             return;
         }
     
-        // Fetch all revenue head IDs for the specified MDA
-        $revenueHeadQuery = "SELECT id FROM revenue_heads WHERE mda_id = ?";
+        $mda_id = (int)$queryParams['mda_id'];
+    
+        // Fetch all revenue heads for the given MDA
+        $revenueHeadQuery = "SELECT id, item_name FROM revenue_heads WHERE mda_id = ?";
         $stmt = $this->conn->prepare($revenueHeadQuery);
-        $stmt->bind_param('i', $queryParams['mda_id']);
+        $stmt->bind_param('i', $mda_id);
         $stmt->execute();
         $result = $stmt->get_result();
     
-        $revenueHeadIds = [];
+        $revenueHeadMap = [];
         while ($row = $result->fetch_assoc()) {
-            $revenueHeadIds[] = $row['id'];
+            $revenueHeadMap[$row['id']] = $row['item_name'];
         }
         $stmt->close();
     
-        // If no revenue heads found, return an empty result
-        if (empty($revenueHeadIds)) {
-            echo json_encode(['status' => 'success', 'data' => [], 'pagination' => ['total_records' => 0]]);
+        // If no revenue heads are found, return empty data
+        if (empty($revenueHeadMap)) {
+            echo json_encode([
+                "status" => "success",
+                "data" => [],
+                "pagination" => ['total_records' => 0]
+            ]);
             return;
         }
     
-        // Base invoice query
+        // Fetch all invoices
         $invoiceQuery = "
             SELECT 
                 inv.*,
-                JSON_UNQUOTE(JSON_EXTRACT(inv.revenue_head, '$')) AS revenue_heads,
                 pc.payment_channel,
                 pc.payment_method,
                 pc.payment_bank,
@@ -677,60 +681,55 @@ class MdaController {
                 pc.date_payment_created
             FROM invoices inv
             LEFT JOIN payment_collection pc ON inv.invoice_number = pc.invoice_number
-            WHERE inv.payment_status = 'paid'
         ";
-    
-        // Add optional status filter
-        $params = [];
-        $types = "";
-    
-        if (!empty($queryParams['status'])) {
-            $invoiceQuery .= " AND inv.payment_status = ?";
-            $params[] = $queryParams['status'];
-            $types .= "s";
-        }
-    
         $stmt = $this->conn->prepare($invoiceQuery);
-        if (!empty($types)) {
-            $stmt->bind_param($types, ...$params);
-        }
         $stmt->execute();
         $result = $stmt->get_result();
     
         $invoices = [];
         while ($row = $result->fetch_assoc()) {
-            $revenueHeads = json_decode($row['revenue_heads'], true);
+            // Decode the revenue_head JSON
+            $revenueHeads = json_decode($row['revenue_head'], true);
+            $associatedRevenueHeads = [];
+            $includeInvoice = false;
     
+            // Filter revenue heads based on MDA
             foreach ($revenueHeads as $revenueHead) {
-                if (in_array($revenueHead['revenue_head_id'], $revenueHeadIds)) {
-                    $row['associated_revenue_heads'][] = $revenueHead;
-                    $invoices[] = $row;
-                    break; // Only add the invoice once, even if multiple revenue heads match
+                if (isset($revenueHeadMap[$revenueHead['revenue_head_id']])) {
+                    $includeInvoice = true;
+                    $associatedRevenueHeads[] = [
+                        'revenue_head_id' => $revenueHead['revenue_head_id'],
+                        'item_name' => $revenueHeadMap[$revenueHead['revenue_head_id']],
+                        'amount' => $revenueHead['amount']
+                    ];
                 }
+            }
+    
+            if ($includeInvoice) {
+                $row['associated_revenue_heads'] = $associatedRevenueHeads;
+    
+                // Fetch taxpayer info
+                $userInfo = $this->getTaxpayerInfo($row['tax_number']);
+                $row['user_info'] = $userInfo;
+    
+                $invoices[] = $row;
             }
         }
         $stmt->close();
     
         // Pagination
-        $page = isset($queryParams['page']) ? $queryParams['page'] : 1;
-        $limit = isset($queryParams['limit']) ? $queryParams['limit'] : 10;
+        $page = isset($queryParams['page']) ? (int)$queryParams['page'] : 1;
+        $limit = isset($queryParams['limit']) ? (int)$queryParams['limit'] : 10;
         $offset = ($page - 1) * $limit;
     
-        $paginatedInvoices = array_slice($invoices, $offset, $limit);
+        $pagedInvoices = array_slice($invoices, $offset, $limit);
         $totalRecords = count($invoices);
         $totalPages = ceil($totalRecords / $limit);
-        foreach ($paginatedInvoices as $key => $value) {
-            unset($paginatedInvoices[$key]['revenue_heads']);
-            unset($paginatedInvoices[$key]['revenue_head']);
-            unset($paginatedInvoices[$key]['date_created']);
-            unset($paginatedInvoices[$key]['description']);
-            unset($paginatedInvoices[$key]['due_date']);
-        }
-        
-        // Return the result
+    
+        // Return structured response
         echo json_encode([
             "status" => "success",
-            "data" => $paginatedInvoices,
+            "data" => $pagedInvoices,
             "pagination" => [
                 "current_page" => $page,
                 "per_page" => $limit,
@@ -739,6 +738,40 @@ class MdaController {
             ]
         ]);
     }
+    
+    // Helper function to fetch taxpayer info
+    private function getTaxpayerInfo($taxNumber) {
+        // Check taxpayer table
+        $query = "SELECT first_name, surname, email, phone FROM taxpayer WHERE tax_number = ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bind_param('s', $taxNumber);
+        $stmt->execute();
+        $result = $stmt->get_result();
+    
+        if ($result->num_rows > 0) {
+            $taxpayer = $result->fetch_assoc();
+            $stmt->close();
+            return $taxpayer;
+        }
+    
+        // Check enumerator_tax_payers table
+        $query = "SELECT first_name, last_name AS surname, email, phone FROM enumerator_tax_payers WHERE tax_number = ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bind_param('s', $taxNumber);
+        $stmt->execute();
+        $result = $stmt->get_result();
+    
+        if ($result->num_rows > 0) {
+            $enumeratorTaxpayer = $result->fetch_assoc();
+            $stmt->close();
+            return $enumeratorTaxpayer;
+        }
+    
+        $stmt->close();
+        return null;
+    }
+    
+    
 
     public function getRevenueHeadSummary() {
         // SQL query to fetch counts
