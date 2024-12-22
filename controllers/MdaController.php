@@ -698,7 +698,7 @@ class MdaController {
         }
 
         if (!empty($queryParams['invoice_number'])) {
-            $query .= " AND inv.invoice_number LIKE ?";
+            $invoiceQuery .= " AND inv.invoice_number LIKE ?";
             $params[] = '%' . $queryParams['invoice_number'] . '%';
             $types .= "s";
         } 
