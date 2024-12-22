@@ -250,6 +250,26 @@ if ($request_method == 'GET' && $uri == '/get-mda-payments') {
     exit;
 }
 
+// Route: Get revenue-heads-summary under Admin
+if ($request_method == 'GET' && $uri == '/revenue-heads-summary') {
+    $mdaController->getRevenueHeadSummary();
+    exit;
+}
+
+// Route: Get revenue-heads-summary under Specific MDA
+if ($request_method == 'GET' && $uri == '/revenue-heads-summary-by-mda') {
+    $mda_id = isset($_GET['mda_id']) ? (int)$_GET['mda_id'] : null;
+    if (!$mda_id) {
+        echo json_encode(['status' => 'error', 'message' => 'MDA ID is required']);
+        http_response_code(400);
+        exit;
+    }
+    $mdaController->getRevenueHeadSummaryByMda($mda_id);
+    exit;
+}
+
+
+
 
 
 
