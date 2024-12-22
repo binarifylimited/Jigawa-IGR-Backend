@@ -106,7 +106,7 @@ class AuthController {
 
     // Check for MDA users
     private function checkMdaUsers($email, $password) {
-        $query = 'SELECT id, email, password, name, mda_id FROM mda_users WHERE email = ? LIMIT 1';
+        $query = 'SELECT id AS mda_id, email, password, name FROM mda_users WHERE email = ? LIMIT 1';
         $stmt = $this->conn->prepare($query);
         $stmt->bind_param('s', $email);
         $stmt->execute();

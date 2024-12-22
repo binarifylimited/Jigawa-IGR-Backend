@@ -739,13 +739,61 @@ class MdaController {
             ]
         ]);
     }
-   
     
+    public function getRevenueHeadSummary() {
+        // SQL query to fetch counts
+        $query = "
+            SELECT 
+                COUNT(*) AS total_revenue_heads,
+                SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) AS active_revenue_heads,
+                SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) AS inactive_revenue_heads
+            FROM revenue_heads
+        ";
     
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $summary = $result->fetch_assoc();
     
+        // Response structure
+        echo json_encode([
+            "status" => "success",
+            "data" => [
+                "total_revenue_heads" => (int) $summary['total_revenue_heads'],
+                "active_revenue_heads" => (int) $summary['active_revenue_heads'],
+                "inactive_revenue_heads" => (int) $summary['inactive_revenue_heads'],
+            ]
+        ]);
+    }
+
+    public function getRevenueHeadSummaryByMda($mda_id) {
+        // SQL query to fetch counts for a specific MDA
+        $query = "
+            SELECT 
+                COUNT(*) AS total_revenue_heads,
+                SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) AS active_revenue_heads,
+                SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) AS inactive_revenue_heads
+            FROM revenue_heads
+            WHERE mda_id = ?
+        ";
     
+        $stmt = $this->conn->prepare($query);
+        $stmt->bind_param('i', $mda_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $summary = $result->fetch_assoc();
     
-    
+        // Response structure
+        echo json_encode([
+            "status" => "success",
+            "data" => [
+                "mda_id" => $mda_id,
+                "total_revenue_heads" => (int) $summary['total_revenue_heads'],
+                "active_revenue_heads" => (int) $summary['active_revenue_heads'],
+                "inactive_revenue_heads" => (int) $summary['inactive_revenue_heads'],
+            ]
+        ]);
+    }
 
 
 }
