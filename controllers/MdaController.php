@@ -582,12 +582,12 @@ class MdaController
 
         $revenueHeadMap = [];
         while ($row = $result->fetch_assoc()) {
-            $revenueHeadMap[$row['id']] = true; // Use a map for quick lookup
+            $revenueHeadMap[$row['id']] = $row['item_name'];
         }
         $stmt->close();
 
         // If no revenue heads found, return an empty result
-        if (empty($revenueHeadMap)) {
+        if (empty($revenueHeadMap)) { 
             echo json_encode(['status' => 'success', 'data' => [], 'pagination' => ['total_records' => 0]]);
             return;
         }
