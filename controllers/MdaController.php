@@ -596,27 +596,27 @@ class MdaController
         $params = [];
         $types = "";
     
-          // Filter by revenue_head_id if provided
-    if (!empty($queryParams['revenue_head_id'])) {
-        $invoiceQuery .= " AND JSON_CONTAINS(revenue_head, JSON_ARRAY(?))";
-        $params[] = (int)$queryParams['revenue_head_id']; // Ensure it's an integer
-        $types .= 'i';
-    }
-
-    // Filter by payment_status
-    if (!empty($queryParams['status'])) {
-        $invoiceQuery .= " AND payment_status = ?";
-        $params[] = $queryParams['status'];
-        $types .= 's';
-    }
-
-    // Filter by date range
-    if (!empty($queryParams['start_date']) && !empty($queryParams['end_date'])) {
-        $invoiceQuery .= " AND date_created BETWEEN ? AND ?";
-        $params[] = $queryParams['start_date'];
-        $params[] = $queryParams['end_date'];
-        $types .= 'ss';
-    }
+        // Add optional filters
+        if (!empty($queryParams['status'])) {
+            $invoiceQuery .= " AND payment_status = ?";
+            $params[] = $queryParams['status'];
+            $types .= "s";
+        }
+    
+        // Filter by revenue_head_id
+        if (!empty($queryParams['revenue_head_id'])) {
+            $invoiceQuery .= " AND JSON_CONTAINS(revenue_head, ?)";
+            $params[] = json_encode([['revenue_head_id' => (int)$queryParams['revenue_head_id']]]);
+            $types .= "i";
+        }
+    
+        // Filter by date range
+        if (!empty($queryParams['start_date']) && !empty($queryParams['end_date'])) {
+            $invoiceQuery .= " AND date_created BETWEEN ? AND ?";
+            $params[] = $queryParams['start_date'];
+            $params[] = $queryParams['end_date'];
+            $types .= "ss";
+        }
     
         // Prepare and execute the query
         $stmt = $this->conn->prepare($invoiceQuery);
