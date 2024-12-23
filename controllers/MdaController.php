@@ -564,52 +564,52 @@ class MdaController
         ]);
     }
 
-    public function getInvoicesByMda($queryParams) {
+    public function getInvoicesByMda($queryParams)
+    {
         // Ensure MDA ID is provided
         if (empty($queryParams['mda_id'])) {
             echo json_encode(['status' => 'error', 'message' => 'MDA ID is required']);
             http_response_code(400);
             return;
         }
-    
+
         // Fetch all revenue head IDs and names for the specified MDA
         $revenueHeadQuery = "SELECT * FROM revenue_heads WHERE mda_id = ?";
         $stmt = $this->conn->prepare($revenueHeadQuery);
         $stmt->bind_param('i', $queryParams['mda_id']);
         $stmt->execute();
         $result = $stmt->get_result();
-    
+
         $revenueHeadMap = [];
         while ($row = $result->fetch_assoc()) {
-            $revenueHeadMap[] = $row['id'];
+            $revenueHeadMap[$row['id']] = true; // Use a map for quick lookup
         }
         $stmt->close();
-    
+
         // If no revenue heads found, return an empty result
         if (empty($revenueHeadMap)) {
             echo json_encode(['status' => 'success', 'data' => [], 'pagination' => ['total_records' => 0]]);
             return;
         }
-    
+
         // Base invoice query
         $invoiceQuery = "SELECT * FROM invoices WHERE 1=1";
         $params = [];
         $types = "";
-    
         // Add optional filters
         if (!empty($queryParams['status'])) {
             $invoiceQuery .= " AND payment_status = ?";
             $params[] = $queryParams['status'];
             $types .= "s";
         }
-    
+
         // Filter by revenue_head_id
         if (!empty($queryParams['revenue_head_id'])) {
             $invoiceQuery .= " AND JSON_CONTAINS(revenue_head, ?)";
-            $params[] = json_encode([['revenue_head_id' => (int)$queryParams['revenue_head_id']]]);
-            $types .= "i";
+            $params[] = json_encode(['revenue_head_id' => (int) $queryParams['revenue_head_id']]);
+            $types .= "s"; // JSON_CONTAINS requires a string
         }
-    
+
         // Filter by date range
         if (!empty($queryParams['start_date']) && !empty($queryParams['end_date'])) {
             $invoiceQuery .= " AND date_created BETWEEN ? AND ?";
@@ -617,7 +617,7 @@ class MdaController
             $params[] = $queryParams['end_date'];
             $types .= "ss";
         }
-    
+
         // Prepare and execute the query
         $stmt = $this->conn->prepare($invoiceQuery);
         if (!empty($types)) {
@@ -625,15 +625,16 @@ class MdaController
         }
         $stmt->execute();
         $result = $stmt->get_result();
-    
+
+
         $invoices = [];
         while ($row = $result->fetch_assoc()) {
             $revenueHeads = json_decode($row['revenue_head'], true);
             $associatedRevenueHeads = [];
             $includeInvoice = false;
-    
+
             foreach ($revenueHeads as $revenueHead) {
-                if (array_key_exists($revenueHead['revenue_head_id'], $revenueHeadMap)) {
+                if (isset($revenueHeadMap[$revenueHead['revenue_head_id']])) {
                     $includeInvoice = true;
                     $associatedRevenueHeads[] = [
                         'revenue_head_id' => $revenueHead['revenue_head_id'],
@@ -642,23 +643,23 @@ class MdaController
                     ];
                 }
             }
-    
+
             if ($includeInvoice) {
                 $row['associated_revenue_heads'] = $associatedRevenueHeads;
                 $invoices[] = $row;
             }
         }
         $stmt->close();
-    
+
         // Pagination
-        $page = isset($queryParams['page']) ? (int)$queryParams['page'] : 1;
-        $limit = isset($queryParams['limit']) ? (int)$queryParams['limit'] : 10;
+        $page = isset($queryParams['page']) ? (int) $queryParams['page'] : 1;
+        $limit = isset($queryParams['limit']) ? (int) $queryParams['limit'] : 10;
         $offset = ($page - 1) * $limit;
-    
+
         $paginatedInvoices = array_slice($invoices, $offset, $limit);
         $totalRecords = count($invoices);
         $totalPages = ceil($totalRecords / $limit);
-    
+
         // Return the result
         echo json_encode([
             "status" => "success",
@@ -671,10 +672,10 @@ class MdaController
             ]
         ]);
     }
-    
 
-    
-    
+
+
+
     public function getInvoicesWithPaymentInfoByMda($queryParams)
     {
         if (empty($queryParams['mda_id'])) {
