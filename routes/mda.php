@@ -222,6 +222,7 @@ if ($request_method == 'GET' && $uri == '/get-mda-users') {
 if ($request_method == 'GET' && $uri == '/get-mda-invoices') {
     $filters = [
         'mda_id' => isset($_GET['mda_id']) ? (int)$_GET['mda_id'] : null,
+        'revenue_head' => isset($_GET['revenue_head']) ? (int)$_GET['revenue_head'] : null,
         'invoice_number' => isset($_GET['invoice_number']) ? $_GET['invoice_number'] : null,
         'status' => isset($_GET['status']) ? $_GET['status'] : null,
         'start_date' => isset($_GET['start_date']) ? $_GET['start_date'] : null,

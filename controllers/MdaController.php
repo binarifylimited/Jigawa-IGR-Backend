@@ -624,7 +624,23 @@ class MdaController {
             }
         }
         $stmt->close();
-    
+        /**
+         * Filter data based on revenue_head_id
+         *
+         * @param array $data
+         * @param int $targetId
+         * @return array
+         */
+        $sent_revenue_head = (int) $queryParams['revenue_head'];
+        if (!empty($sent_revenue_head)) {
+            $filteredInvoices = [];
+            foreach ($invoices as $entry) {
+                if ($entry['associated_revenue_heads'][0]['revenue_head_id'] == $sent_revenue_head) {
+                    $filteredInvoices[] = $entry;
+                }  
+            }
+            $invoices = $filteredInvoices;
+        }
         // Pagination
         $page = isset($queryParams['page']) ? (int)$queryParams['page'] : 1;
         $limit = isset($queryParams['limit']) ? (int)$queryParams['limit'] : 10;
@@ -646,6 +662,9 @@ class MdaController {
             ]
         ]);
     }
+
+    
+    
     
 
     public function getInvoicesWithPaymentInfoByMda($queryParams) {
