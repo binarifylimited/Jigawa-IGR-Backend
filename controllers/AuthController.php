@@ -1,6 +1,9 @@
 <?php
 require_once 'vendor/autoload.php';  // Load JWT package
 require_once 'config/database.php';  // Load the database connection
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
 use \Firebase\JWT\JWT;
 

@@ -2,10 +2,12 @@
 require_once 'config/database.php';
 require_once 'helpers/validation_helper.php';  // Use the MDA duplicate check
 
-class MdaController {
+class MdaController
+{
     private $conn;
 
-    public function __construct() {
+    public function __construct()
+    {
         $database = new Database();
         $this->conn = $database->getConnection();
     }
@@ -13,7 +15,8 @@ class MdaController {
     /**
      * Create a new MDA and its contact information.
      */
-    public function createMda($data) {
+    public function createMda($data)
+    {
         // Validate required fields for MDA
         if (!isset($data['fullname'], $data['mda_code'], $data['email'], $data['phone'], $data['industry'])) {
             echo json_encode(['status' => 'error', 'message' => 'Missing required fields: fullname, mda_code, email, phone, industry']);
@@ -82,7 +85,8 @@ class MdaController {
     /**
      * Helper function to insert MDA contact information into 'mda_contact_info' table.
      */
-    private function createMdaContactInfo($mda_id, $contact_info) {
+    private function createMdaContactInfo($mda_id, $contact_info)
+    {
         // Ensure contact information fields are present
         if (!isset($contact_info['state'], $contact_info['geolocation'], $contact_info['lga'], $contact_info['address'])) {
             throw new Exception('Missing required contact info fields: state, geolocation, lga, address');
@@ -111,7 +115,8 @@ class MdaController {
     /**
      * Update MDA information and optional contact information.
      */
-    public function updateMda($data) {
+    public function updateMda($data)
+    {
         // Validate required fields
         if (!isset($data['mda_id'])) {
             echo json_encode(['status' => 'error', 'message' => 'Missing required field: mda_id']);
@@ -196,7 +201,8 @@ class MdaController {
     /**
      * Update MDA contact information.
      */
-    private function updateMdaContactInfo($mda_id, $contact_info) {
+    private function updateMdaContactInfo($mda_id, $contact_info)
+    {
         $query = "UPDATE mda_contact_info SET state = COALESCE(?, state), geolocation = COALESCE(?, geolocation), lga = COALESCE(?, lga), address = COALESCE(?, address) WHERE mda_id = ?";
 
         $stmt = $this->conn->prepare($query);
@@ -219,10 +225,11 @@ class MdaController {
     /**
      * Fetch all MDAs with pagination.
      */
-    public function getAllMdas($page, $limit) {
+    public function getAllMdas($page, $limit)
+    {
         // Set default page and limit if not provided
-        $page = isset($page) ? (int)$page : 1;
-        $limit = isset($limit) ? (int)$limit : 10;
+        $page = isset($page) ? (int) $page : 1;
+        $limit = isset($limit) ? (int) $limit : 10;
 
         // Calculate the offset
         $offset = ($page - 1) * $limit;
@@ -260,7 +267,8 @@ class MdaController {
     /**
      * Fetch MDA by various filters (id, fullname, mda_code, email, allow_payment, status).
      */
-    public function getMdaByFilters($queryParams) {
+    public function getMdaByFilters($queryParams)
+    {
         // Base query to fetch MDA details and count revenue heads
         $query = "
             SELECT
@@ -276,61 +284,61 @@ class MdaController {
             LEFT JOIN revenue_heads rh ON m.id = rh.mda_id
             WHERE 1=1
             ";
-    
+
         $params = [];
         $types = "";
-    
+
         // Apply filters based on query parameters
         if (!empty($queryParams['id'])) {
             $query .= " AND m.id = ?";
             $params[] = $queryParams['id'];
             $types .= "i";
         }
-    
+
         if (!empty($queryParams['fullname'])) {
             $query .= " AND m.fullname LIKE ?";
             $params[] = '%' . $queryParams['fullname'] . '%';
             $types .= "s";
         }
-    
+
         if (!empty($queryParams['mda_code'])) {
             $query .= " AND m.mda_code = ?";
             $params[] = $queryParams['mda_code'];
             $types .= "s";
         }
-    
+
         if (!empty($queryParams['allow_payment'])) {
             $query .= " AND m.allow_payment = ?";
             $params[] = $queryParams['allow_payment'];
             $types .= "i";
         }
-    
+
         if (!empty($queryParams['status'])) {
             $query .= " AND m.status = ?";
             $params[] = $queryParams['status'];
             $types .= "i";
         }
-    
+
         if (!empty($queryParams['email'])) {
             $query .= " AND m.email LIKE ?";
             $params[] = '%' . $queryParams['email'] . '%';
             $types .= "s";
         }
-    
+
         // Add GROUP BY
         $query .= " GROUP BY m.id, mdac.state, mdac.geolocation, mdac.lga, mdac.address";
 
-    
+
         // Add pagination if provided
-        $page = isset($queryParams['page']) ? (int)$queryParams['page'] : 1;
-        $limit = isset($queryParams['limit']) ? (int)$queryParams['limit'] : 10;
+        $page = isset($queryParams['page']) ? (int) $queryParams['page'] : 1;
+        $limit = isset($queryParams['limit']) ? (int) $queryParams['limit'] : 10;
         $offset = ($page - 1) * $limit;
-    
+
         $query .= " LIMIT ? OFFSET ?";
         $params[] = $limit;
         $params[] = $offset;
         $types .= "ii";
-    
+
         // Prepare and execute the query
         $stmt = $this->conn->prepare($query);
         if ($types) {
@@ -338,21 +346,21 @@ class MdaController {
         }
         $stmt->execute();
         $result = $stmt->get_result();
-    
+
         // Fetch MDAs and calculate total remittance for each
         $mdas = [];
         while ($row = $result->fetch_assoc()) {
             $mdaId = $row['id'];
-    
+
             // Calculate total remittance for the MDA
             $remittanceQuery = "SELECT revenue_head, payment_status FROM invoices WHERE payment_status = 'paid'";
             $remittanceResult = $this->conn->query($remittanceQuery);
-    
+
             $totalRemittance = 0;
-    
+
             while ($invoice = $remittanceResult->fetch_assoc()) {
                 $revenueHeads = json_decode($invoice['revenue_head'], true);
-    
+
                 foreach ($revenueHeads as $revenueHead) {
                     // Check if the revenue head belongs to this MDA
                     $revenueHeadQuery = "SELECT mda_id FROM revenue_heads WHERE id = ?";
@@ -361,76 +369,77 @@ class MdaController {
                     $stmtRevenueHead->execute();
                     $revenueHeadResult = $stmtRevenueHead->get_result();
                     $revenueHeadData = $revenueHeadResult->fetch_assoc();
-    
+
                     if ($revenueHeadData['mda_id'] == $mdaId) {
                         $totalRemittance += $revenueHead['amount'];
                     }
-    
+
                     $stmtRevenueHead->close();
                 }
             }
-    
+
             // Add total remittance to the MDA details
             $row['total_remittance'] = $totalRemittance;
-    
+
             $mdas[] = $row;
         }
-    
+
         // Return structured response
         echo json_encode([
             "status" => "success",
             "data" => $mdas
         ]);
     }
-    
 
-    public function deleteMda($mda_id) {
+
+    public function deleteMda($mda_id)
+    {
         // Ensure the MDA exists
         $check_query = "SELECT id FROM mda WHERE id = ? AND account_status = 'activate'";
         $stmt = $this->conn->prepare($check_query);
         $stmt->bind_param('i', $mda_id);
         $stmt->execute();
         $stmt->store_result();
-    
+
         if ($stmt->num_rows == 0) {
             echo json_encode(['status' => 'error', 'message' => 'MDA not found']);
             http_response_code(404); // Not Found
             $stmt->close();
             return;
         }
-    
+
         // Start transaction to ensure safe deletion
         $this->conn->begin_transaction();
-    
+
         try {
-        // Deactivate associated revenue heads
-        $deactivate_revenue_query = "UPDATE revenue_heads SET account_status = 'deactivate' WHERE mda_id = ?";
-        $stmt = $this->conn->prepare($deactivate_revenue_query);
-        $stmt->bind_param('i', $mda_id);
-        if (!$stmt->execute()) {
-            throw new Exception('Error deactivating revenue heads: ' . $stmt->error);
-        }
+            // Deactivate associated revenue heads
+            $deactivate_revenue_query = "UPDATE revenue_heads SET account_status = 'deactivate' WHERE mda_id = ?";
+            $stmt = $this->conn->prepare($deactivate_revenue_query);
+            $stmt->bind_param('i', $mda_id);
+            if (!$stmt->execute()) {
+                throw new Exception('Error deactivating revenue heads: ' . $stmt->error);
+            }
 
-        // Deactivate associated MDA contact information
-        $deactivate_contact_info_query = "UPDATE mda_contact_info SET account_status = 'deactivate' WHERE mda_id = ?";
-        $stmt = $this->conn->prepare($deactivate_contact_info_query);
-        $stmt->bind_param('i', $mda_id);
-        if (!$stmt->execute()) {
-            throw new Exception('Error deactivating MDA contact info: ' . $stmt->error);
-        }
+            // Deactivate associated MDA contact information
+            $deactivate_contact_info_query = "UPDATE mda_contact_info SET account_status = 'deactivate' WHERE mda_id = ?";
+            $stmt = $this->conn->prepare($deactivate_contact_info_query);
+            $stmt->bind_param('i', $mda_id);
+            if (!$stmt->execute()) {
+                throw new Exception('Error deactivating MDA contact info: ' . $stmt->error);
+            }
 
-        // Finally, deactivate the MDA
-        $deactivate_mda_query = "UPDATE mda SET account_status = 'deactivate' WHERE id = ?";
-        $stmt = $this->conn->prepare($deactivate_mda_query);
-        $stmt->bind_param('i', $mda_id);
-        if (!$stmt->execute()) {
-            throw new Exception('Error deactivating MDA: ' . $stmt->error);
-        }
-    
-        // Commit transaction
-        $this->conn->commit();
-        echo json_encode(['status' => 'success', 'message' => 'MDA deactivated successfully']);
-        $stmt->close();
+            // Finally, deactivate the MDA
+            $deactivate_mda_query = "UPDATE mda SET account_status = 'deactivate' WHERE id = ?";
+            $stmt = $this->conn->prepare($deactivate_mda_query);
+            $stmt->bind_param('i', $mda_id);
+            if (!$stmt->execute()) {
+                throw new Exception('Error deactivating MDA: ' . $stmt->error);
+            }
+
+            // Commit transaction
+            $this->conn->commit();
+            echo json_encode(['status' => 'success', 'message' => 'MDA deactivated successfully']);
+            $stmt->close();
         } catch (Exception $e) {
             // Rollback transaction in case of an error
             $this->conn->rollback();
@@ -440,10 +449,11 @@ class MdaController {
         // {
         //     "mda_id": 123
         // }
-        
+
     }
 
-    public function getMdaUsers($queryParams) {
+    public function getMdaUsers($queryParams)
+    {
         // Base query to fetch MDA users
         $query = "
             SELECT 
@@ -460,51 +470,51 @@ class MdaController {
             LEFT JOIN mda m ON mu.mda_id = m.id
             WHERE 1=1
         ";
-    
+
         $params = [];
         $types = "";
-    
+
         // Apply filters
         if (!empty($queryParams['mda_id'])) {
             $query .= " AND mu.mda_id = ?";
             $params[] = $queryParams['mda_id'];
             $types .= "i";
         }
-    
+
         if (!empty($queryParams['name'])) {
             $query .= " AND mu.name LIKE ?";
             $params[] = '%' . $queryParams['name'] . '%';
             $types .= "s";
         }
-    
+
         if (!empty($queryParams['email'])) {
             $query .= " AND mu.email LIKE ?";
             $params[] = '%' . $queryParams['email'] . '%';
             $types .= "s";
         }
-    
+
         if (!empty($queryParams['phone_number'])) {
             $query .= " AND mu.phone_number LIKE ?";
             $params[] = '%' . $queryParams['phone'] . '%';
             $types .= "s";
         }
-    
+
         if (!empty($queryParams['office_name'])) {
             $query .= " AND mu.office_name LIKE ?";
             $params[] = '%' . $queryParams['office_name'] . '%';
             $types .= "s";
         }
-    
+
         // Add pagination
-        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
+        $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+        $limit = isset($_GET['limit']) ? (int) $_GET['limit'] : 10;
         $offset = ($page - 1) * $limit;
-    
+
         $query .= " LIMIT ? OFFSET ?";
         $params[] = $limit;
         $params[] = $offset;
         $types .= "ii";
-    
+
         // Prepare and execute the query
         $stmt = $this->conn->prepare($query);
         if ($types) {
@@ -512,17 +522,17 @@ class MdaController {
         }
         $stmt->execute();
         $result = $stmt->get_result();
-    
+
         // Fetch results
         $mdaUsers = [];
         while ($row = $result->fetch_assoc()) {
             $mdaUsers[] = $row;
         }
-    
+
         // Get total count for pagination
         $totalQuery = "SELECT COUNT(*) as total FROM mda_users WHERE 1=1";
         if (!empty($queryParams['mda_id'])) {
-            $totalQuery .= " AND mda_id = " . (int)$queryParams['mda_id'];
+            $totalQuery .= " AND mda_id = " . (int) $queryParams['mda_id'];
         }
         if (!empty($queryParams['name'])) {
             $totalQuery .= " AND name LIKE '%" . $this->conn->real_escape_string($queryParams['name']) . "%'";
@@ -536,11 +546,11 @@ class MdaController {
         if (!empty($queryParams['office_name'])) {
             $totalQuery .= " AND office_name LIKE '%" . $this->conn->real_escape_string($queryParams['office_name']) . "%'";
         }
-    
+
         $totalResult = $this->conn->query($totalQuery);
         $total = $totalResult->fetch_assoc()['total'];
         $totalPages = ceil($total / $limit);
-    
+
         // Return structured response
         echo json_encode([
             "status" => "success",
@@ -554,61 +564,77 @@ class MdaController {
         ]);
     }
 
-    public function getInvoicesByMda($queryParams) {
+    public function getInvoicesByMda($queryParams)
+    {
         // Ensure MDA ID is provided
         if (empty($queryParams['mda_id'])) {
             echo json_encode(['status' => 'error', 'message' => 'MDA ID is required']);
             http_response_code(400);
             return;
         }
-    
+
         // Fetch all revenue head IDs and names for the specified MDA
-        $revenueHeadQuery = "SELECT id, item_name FROM revenue_heads WHERE mda_id = ?";
+        $revenueHeadQuery = "SELECT * FROM revenue_heads WHERE mda_id = ?";
         $stmt = $this->conn->prepare($revenueHeadQuery);
         $stmt->bind_param('i', $queryParams['mda_id']);
         $stmt->execute();
         $result = $stmt->get_result();
-    
+
         $revenueHeadMap = [];
         while ($row = $result->fetch_assoc()) {
             $revenueHeadMap[$row['id']] = $row['item_name'];
         }
         $stmt->close();
-    
+
         // If no revenue heads found, return an empty result
-        if (empty($revenueHeadMap)) {
+        if (empty($revenueHeadMap)) { 
             echo json_encode(['status' => 'success', 'data' => [], 'pagination' => ['total_records' => 0]]);
             return;
         }
-    
+
         // Base invoice query
         $invoiceQuery = "SELECT * FROM invoices WHERE 1=1";
-    
-        // Add optional status filter
         $params = [];
         $types = "";
-    
+        // Add optional filters
         if (!empty($queryParams['status'])) {
             $invoiceQuery .= " AND payment_status = ?";
             $params[] = $queryParams['status'];
             $types .= "s";
         }
-    
+
+        // Filter by revenue_head_id
+        if (!empty($queryParams['revenue_head_id'])) {
+            $invoiceQuery .= " AND JSON_CONTAINS(revenue_head, ?)";
+            $params[] = json_encode(['revenue_head_id' => (int) $queryParams['revenue_head_id']]);
+            $types .= "s"; // JSON_CONTAINS requires a string
+        }
+
+        // Filter by date range
+        if (!empty($queryParams['start_date']) && !empty($queryParams['end_date'])) {
+            $invoiceQuery .= " AND date_created BETWEEN ? AND ?";
+            $params[] = $queryParams['start_date'];
+            $params[] = $queryParams['end_date'];
+            $types .= "ss";
+        }
+
+        // Prepare and execute the query
         $stmt = $this->conn->prepare($invoiceQuery);
         if (!empty($types)) {
             $stmt->bind_param($types, ...$params);
         }
         $stmt->execute();
         $result = $stmt->get_result();
-    
+
+
         $invoices = [];
         while ($row = $result->fetch_assoc()) {
             $revenueHeads = json_decode($row['revenue_head'], true);
             $associatedRevenueHeads = [];
             $includeInvoice = false;
-    
+
             foreach ($revenueHeads as $revenueHead) {
-                if (array_key_exists($revenueHead['revenue_head_id'], $revenueHeadMap)) {
+                if (isset($revenueHeadMap[$revenueHead['revenue_head_id']])) {
                     $includeInvoice = true;
                     $associatedRevenueHeads[] = [
                         'revenue_head_id' => $revenueHead['revenue_head_id'],
@@ -617,7 +643,7 @@ class MdaController {
                     ];
                 }
             }
-    
+
             if ($includeInvoice) {
                 $row['associated_revenue_heads'] = $associatedRevenueHeads;
                 $invoices[] = $row;
@@ -642,14 +668,14 @@ class MdaController {
             $invoices = $filteredInvoices;
         }
         // Pagination
-        $page = isset($queryParams['page']) ? (int)$queryParams['page'] : 1;
-        $limit = isset($queryParams['limit']) ? (int)$queryParams['limit'] : 10;
+        $page = isset($queryParams['page']) ? (int) $queryParams['page'] : 1;
+        $limit = isset($queryParams['limit']) ? (int) $queryParams['limit'] : 10;
         $offset = ($page - 1) * $limit;
-    
+
         $paginatedInvoices = array_slice($invoices, $offset, $limit);
         $totalRecords = count($invoices);
         $totalPages = ceil($totalRecords / $limit);
-    
+
         // Return the result
         echo json_encode([
             "status" => "success",
@@ -667,28 +693,31 @@ class MdaController {
     
     
 
-    public function getInvoicesWithPaymentInfoByMda($queryParams) {
+
+
+    public function getInvoicesWithPaymentInfoByMda($queryParams)
+    {
         if (empty($queryParams['mda_id'])) {
             echo json_encode(['status' => 'error', 'message' => 'MDA ID is required']);
             http_response_code(400);
             return;
         }
-    
-        $mda_id = (int)$queryParams['mda_id'];
-    
+
+        $mda_id = (int) $queryParams['mda_id'];
+
         // Fetch all revenue heads for the given MDA
         $revenueHeadQuery = "SELECT id, item_name FROM revenue_heads WHERE mda_id = ?";
         $stmt = $this->conn->prepare($revenueHeadQuery);
         $stmt->bind_param('i', $mda_id);
         $stmt->execute();
         $result = $stmt->get_result();
-    
+
         $revenueHeadMap = [];
         while ($row = $result->fetch_assoc()) {
             $revenueHeadMap[$row['id']] = $row['item_name'];
         }
         $stmt->close();
-    
+
         // If no revenue heads are found, return empty data
         if (empty($revenueHeadMap)) {
             echo json_encode([
@@ -698,7 +727,7 @@ class MdaController {
             ]);
             return;
         }
-    
+
         // Fetch all invoices
         $invoiceQuery = "
             SELECT 
@@ -716,14 +745,14 @@ class MdaController {
         $stmt = $this->conn->prepare($invoiceQuery);
         $stmt->execute();
         $result = $stmt->get_result();
-    
+
         $invoices = [];
         while ($row = $result->fetch_assoc()) {
             // Decode the revenue_head JSON
             $revenueHeads = json_decode($row['revenue_head'], true);
             $associatedRevenueHeads = [];
             $includeInvoice = false;
-    
+
             // Filter revenue heads based on MDA
             foreach ($revenueHeads as $revenueHead) {
                 if (isset($revenueHeadMap[$revenueHead['revenue_head_id']])) {
@@ -735,28 +764,28 @@ class MdaController {
                     ];
                 }
             }
-    
+
             if ($includeInvoice) {
                 $row['associated_revenue_heads'] = $associatedRevenueHeads;
-    
+
                 // Fetch taxpayer info
                 $userInfo = $this->getTaxpayerInfo($row['tax_number']);
                 $row['user_info'] = $userInfo;
-    
+
                 $invoices[] = $row;
             }
         }
         $stmt->close();
-    
+
         // Pagination
-        $page = isset($queryParams['page']) ? (int)$queryParams['page'] : 1;
-        $limit = isset($queryParams['limit']) ? (int)$queryParams['limit'] : 10;
+        $page = isset($queryParams['page']) ? (int) $queryParams['page'] : 1;
+        $limit = isset($queryParams['limit']) ? (int) $queryParams['limit'] : 10;
         $offset = ($page - 1) * $limit;
-    
+
         $pagedInvoices = array_slice($invoices, $offset, $limit);
         $totalRecords = count($invoices);
         $totalPages = ceil($totalRecords / $limit);
-    
+
         // Return structured response
         echo json_encode([
             "status" => "success",
@@ -769,42 +798,44 @@ class MdaController {
             ]
         ]);
     }
-    
+
     // Helper function to fetch taxpayer info
-    private function getTaxpayerInfo($taxNumber) {
+    private function getTaxpayerInfo($taxNumber)
+    {
         // Check taxpayer table
         $query = "SELECT first_name, surname, email, phone FROM taxpayer WHERE tax_number = ?";
         $stmt = $this->conn->prepare($query);
         $stmt->bind_param('s', $taxNumber);
         $stmt->execute();
         $result = $stmt->get_result();
-    
+
         if ($result->num_rows > 0) {
             $taxpayer = $result->fetch_assoc();
             $stmt->close();
             return $taxpayer;
         }
-    
+
         // Check enumerator_tax_payers table
         $query = "SELECT first_name, last_name AS surname, email, phone FROM enumerator_tax_payers WHERE tax_number = ?";
         $stmt = $this->conn->prepare($query);
         $stmt->bind_param('s', $taxNumber);
         $stmt->execute();
         $result = $stmt->get_result();
-    
+
         if ($result->num_rows > 0) {
             $enumeratorTaxpayer = $result->fetch_assoc();
             $stmt->close();
             return $enumeratorTaxpayer;
         }
-    
+
         $stmt->close();
         return null;
     }
-    
-    
 
-    public function getRevenueHeadSummary() {
+
+
+    public function getRevenueHeadSummary()
+    {
         // SQL query to fetch counts
         $query = "
             SELECT 
@@ -813,12 +844,12 @@ class MdaController {
                 SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) AS inactive_revenue_heads
             FROM revenue_heads
         ";
-    
+
         $stmt = $this->conn->prepare($query);
         $stmt->execute();
         $result = $stmt->get_result();
         $summary = $result->fetch_assoc();
-    
+
         // Response structure
         echo json_encode([
             "status" => "success",
@@ -830,7 +861,8 @@ class MdaController {
         ]);
     }
 
-    public function getRevenueHeadSummaryByMda($mda_id) {
+    public function getRevenueHeadSummaryByMda($mda_id)
+    {
         // SQL query to fetch counts for a specific MDA
         $query = "
             SELECT 
@@ -840,13 +872,13 @@ class MdaController {
             FROM revenue_heads
             WHERE mda_id = ?
         ";
-    
+
         $stmt = $this->conn->prepare($query);
         $stmt->bind_param('i', $mda_id);
         $stmt->execute();
         $result = $stmt->get_result();
         $summary = $result->fetch_assoc();
-    
+
         // Response structure
         echo json_encode([
             "status" => "success",
@@ -858,16 +890,16 @@ class MdaController {
             ]
         ]);
     }
-    
-    
-    
-   
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
+
+
+
 
 
 }

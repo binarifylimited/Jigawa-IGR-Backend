@@ -227,6 +227,7 @@ if ($request_method == 'GET' && $uri == '/get-mda-invoices') {
         'status' => isset($_GET['status']) ? $_GET['status'] : null,
         'start_date' => isset($_GET['start_date']) ? $_GET['start_date'] : null,
         'end_date' => isset($_GET['end_date']) ? $_GET['end_date'] : null,
+        'revenue_head_id' => isset($_GET['revenue_head_id']) ? $_GET['revenue_head_id'] : null,
         'page' => isset($_GET['page']) ? (int)$_GET['page'] : 1,
         'limit' => isset($_GET['limit']) ? (int)$_GET['limit'] : 10
     ];
