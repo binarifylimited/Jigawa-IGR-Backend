@@ -38,6 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 // Proceed with your main application logic (e.g., routing)
 require_once 'routes/payment.php';
 require_once 'routes/taxpayer.php';
+require_once 'routes/admin.php';
 require_once 'routes/web.php';
 require_once 'routes/invoice.php';
 require_once 'routes/payee.php';
