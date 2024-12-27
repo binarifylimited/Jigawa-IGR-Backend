@@ -72,6 +72,7 @@ class AuthController {
             $payload['fullname'] = $user['first_name'].' '.$user['surname'];
             $payload['first_name'] = $user['first_name'];
             $payload['surname'] = $user['surname'];
+            $payload['category'] = $user['category'];
         } elseif ($user['user_type'] == 'special_user') {
             $payload['official_TIN'] = $user['official_TIN'];
             $payload['payer_id'] = $user['payer_id'];
@@ -145,7 +146,7 @@ class AuthController {
 
     // Check for tax payer users
     private function checkTaxPayerUsers($email, $password) {
-        $query = 'SELECT t.id, t.email, ts.password, t.first_name, t.surname, t.tax_number, ti.TIN FROM taxpayer t JOIN taxpayer_security ts ON t.id = ts.taxpayer_id JOIN taxpayer_identification ti ON t.id = ti.taxpayer_id WHERE t.email = ? LIMIT 1;';
+        $query = 'SELECT t.id, t.email, ts.password, t.first_name, t.category, t.surname, t.tax_number, ti.TIN FROM taxpayer t JOIN taxpayer_security ts ON t.id = ts.taxpayer_id JOIN taxpayer_identification ti ON t.id = ti.taxpayer_id WHERE t.email = ? LIMIT 1;';
         $stmt = $this->conn->prepare($query);
         $stmt->bind_param('s', $email);
         $stmt->execute();
@@ -155,6 +156,7 @@ class AuthController {
             $user = $result->fetch_assoc();
             if (password_verify($password, $user['password'])) {
                 $user['user_type'] = 'tax_payer';  // Identify the user type
+                $user['category'] = $user['category'];
                 return $user;
             }
         }
