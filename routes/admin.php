@@ -38,6 +38,27 @@ if ($request_method == 'GET' && $uri == '/get-expected-monthly-revenue') {
     exit;
 }
 
+if ($request_method == 'GET' && $uri == '/get-total-special-users') {
+    $adminController->getTotalSpecialUsers();
+    exit;
+}
+
+if ($request_method == 'GET' && $uri == '/get-total-employees') {
+    $adminController->getTotalEmployees();
+    exit;
+}
+
+if ($request_method == 'GET' && $uri == '/get-total-annual-estimate') {
+    $filters = [
+        'year' => isset($_GET['year']) ? (int)$_GET['year'] : null,
+    ];
+
+    $adminController->getTotalAnnualEstimate(array_filter($filters)); // Filter out null values
+    exit;
+}
+
+
+
 
 
 

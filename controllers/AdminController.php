@@ -136,6 +136,82 @@ class AdminController {
             "expected_monthly_revenue" => $totalInvoicedAmount
         ]);
     }
+
+    public function getTotalSpecialUsers() {
+        // Base query
+        $query = "SELECT COUNT(*) AS total_special_users FROM special_users_";
+    
+        // Execute the query
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $data = $result->fetch_assoc();
+    
+        // Return the result
+        echo json_encode([
+            "status" => "success",
+            "total_special_users" => $data['total_special_users'] ?? 0 // Default to 0 if no records found
+        ]);
+    
+        $stmt->close();
+    }
+
+    public function getTotalEmployees() {
+        // Base query
+        $query = "SELECT COUNT(*) AS total_employees FROM special_user_employees";
+    
+        // Execute the query
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $data = $result->fetch_assoc();
+    
+        // Return the result
+        echo json_encode([
+            "status" => "success",
+            "total_employees" => $data['total_employees'] ?? 0 // Default to 0 if no records found
+        ]);
+    
+        $stmt->close();
+    }
+
+    public function getTotalAnnualEstimate($filters) {
+        // Base query
+        $query = "SELECT SUM(annual_gross_income) AS total_annual_estimate FROM employee_salary_and_benefits WHERE 1=1";
+    
+        $params = [];
+        $types = '';
+    
+        // Add year filter
+        if (!empty($filters['year'])) {
+            $query .= " AND YEAR(date_created) = ?";
+            $params[] = $filters['year'];
+            $types .= 'i';
+        }
+    
+        // Prepare and execute the query
+        $stmt = $this->conn->prepare($query);
+    
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
+    
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $data = $result->fetch_assoc();
+    
+        // Return the result
+        echo json_encode([
+            "status" => "success",
+            "total_annual_estimate" => $data['total_annual_estimate'] ?? 0 // Default to 0 if no records found
+        ]);
+    
+        $stmt->close();
+    }
+    
+    
+    
+    
     
     
 }
