@@ -39,3 +39,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $uri === '/get-enumerator-tax-payers
 }
 
 
+// Route: Get total registered Enum taxpayers
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && $uri === '/get-enumtaxpayer-statistics') {
+    $response = $enumeratorController->getEnumTaxpayerStatistics();
+
+    // Set response header and output the response in JSON format
+    header('Content-Type: application/json');
+    echo $response;
+    exit;
+}
+
+

@@ -213,4 +213,39 @@ class EnumeratorController {
             ]
         ]);
     }
+
+    // Get Enum taxpayer statistics 
+    public function getEnumTaxpayerStatistics() {
+        // Query to count total taxpayers
+        $totalQueryEnumAgent = "SELECT COUNT(*) AS total_enumerator_agent FROM enumerator_users";
+
+        // Query to count self-registered taxpayers
+        $totalQueryTaxpayer = "SELECT COUNT(*) AS total_enumerator_tax_payers FROM enumerator_tax_payers";
+
+        try {
+            // Execute total taxpayers query
+            $totalEnumAgentResult = $this->conn->query($totalQueryEnumAgent);
+            $totalEnumAgentCount = $totalEnumAgentResult->fetch_assoc()['total_enumerator_agent'];
+
+            // Execute self-registered taxpayers query
+            $totalEnumTapayerResult = $this->conn->query($totalQueryTaxpayer);
+            $totalEnumTapayerCount = $totalEnumTapayerResult->fetch_assoc()['total_enumerator_tax_payers'];
+
+          
+            // Return JSON response
+            return json_encode([
+                "status" => "success",
+                "data" => [
+                    "total_enumerator_agent" => (int)$totalEnumAgentCount,
+                    "total_enumerator_tax_payers" => (int)$totalEnumTapayerCount
+                ]
+            ]);
+        } catch (Exception $e) {
+            return json_encode([
+                "status" => "error",
+                "message" => "Failed to fetch statistics",
+                "error" => $e->getMessage()
+            ]);
+        }
+    }
 }
