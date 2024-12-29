@@ -184,7 +184,7 @@ class AdminController {
     
         // Add year filter
         if (!empty($filters['year'])) {
-            $query .= " AND YEAR(date_created) = ?";
+            $query .= " AND YEAR(created_date) = ?";
             $params[] = $filters['year'];
             $types .= 'i';
         }
