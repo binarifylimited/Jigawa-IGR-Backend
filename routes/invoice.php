@@ -54,5 +54,11 @@ if ($request_method == 'GET' && $uri == '/invoices-summary') {
     exit;
 }
 
+if ($request_method === 'GET' && $uri === '/get-taxpayer-invoice-stats') {
+    $taxNumber = isset($_GET['tax_number']) ? $_GET['tax_number'] : null;
+    $invoiceController->getInvoiceStatsByTaxNumber($taxNumber);
+    exit;
+}
+
 
 // You can add more invoice-related routes here (for example, fetching invoice details, updating an invoice, etc.)

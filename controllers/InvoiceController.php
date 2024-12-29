@@ -401,6 +401,85 @@ class InvoiceController {
             ]
         ]);
     }
+
+    public function getInvoiceStatsByTaxNumber($taxNumber)
+{
+    // Check if tax_number is provided
+    if (empty($taxNumber)) {
+        echo json_encode(['status' => 'error', 'message' => 'Tax number is required']);
+        http_response_code(400);
+        return;
+    }
+
+    // Initialize statistics
+    $totalInvoices = 0;
+    $totalPaidInvoices = 0;
+    $totalDueInvoices = 0;
+    $totalUnpaidInvoices = 0; // New field
+    $totalAmountPaid = 0.0;
+    $totalAmountDue = 0.0;
+    $totalAmountUnpaid = 0.0; // New field
+
+    // Query to fetch invoices for the given tax number
+    $query = "
+        SELECT 
+            id, 
+            payment_status, 
+            amount_paid, 
+            revenue_head, 
+            due_date 
+        FROM invoices 
+        WHERE tax_number = ?";
+    
+    $stmt = $this->conn->prepare($query);
+    $stmt->bind_param('s', $taxNumber);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    while ($row = $result->fetch_assoc()) {
+        $totalInvoices++;
+
+        // Decode revenue_head JSON to calculate amounts
+        $revenueHeads = json_decode($row['revenue_head'], true);
+        $invoiceAmount = 0.0;
+
+        foreach ($revenueHeads as $revenueHead) {
+            $invoiceAmount += (float)$revenueHead['amount'];
+        }
+
+        // Check payment status and categorize
+        if ($row['payment_status'] === 'paid') {
+            $totalPaidInvoices++;
+            $totalAmountPaid += (float)$row['amount_paid'];
+        } elseif ($row['payment_status'] === 'unpaid') {
+            $totalUnpaidInvoices++;
+            $totalAmountUnpaid += $invoiceAmount;
+        }
+
+        // Check if due
+        if (strtotime($row['due_date']) < time() && $row['payment_status'] !== 'paid') {
+            $totalDueInvoices++;
+            $totalAmountDue += $invoiceAmount;
+        }
+    }
+
+    $stmt->close();
+
+    // Return the statistics
+    echo json_encode([
+        "status" => "success",
+        "data" => [
+            "total_invoices" => $totalInvoices,
+            "total_paid_invoices" => $totalPaidInvoices,
+            "total_due_invoices" => $totalDueInvoices,
+            "total_unpaid_invoices" => $totalUnpaidInvoices, // New field
+            "total_amount_paid" => $totalAmountPaid,
+            "total_amount_due" => $totalAmountDue,
+            "total_amount_unpaid" => $totalAmountUnpaid // New field
+        ]
+    ]);
+}
+
     
     
 }
