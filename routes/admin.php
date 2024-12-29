@@ -57,6 +57,27 @@ if ($request_method == 'GET' && $uri == '/get-total-annual-estimate') {
     exit;
 }
 
+if ($request_method == 'GET' && $uri == '/get-total-annual-remittance') {
+    $filters = [
+        'year' => isset($_GET['year']) ? (int)$_GET['year'] : null,
+    ];
+
+    $adminController->getTotalAnnualRemittance(array_filter($filters)); // Filter out null values
+    exit;
+}
+
+if ($request_method == 'GET' && $uri == '/get-monthly-estimate') {
+    $filters = [
+        'month' => isset($_GET['month']) ? (int)$_GET['month'] : null,
+        'year' => isset($_GET['year']) ? (int)$_GET['year'] : null,
+    ];
+
+    $adminController->getMonthlyEstimate(array_filter($filters)); // Filter out null values
+    exit;
+}
+
+
+
 
 
 

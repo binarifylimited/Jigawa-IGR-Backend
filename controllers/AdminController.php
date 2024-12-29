@@ -208,6 +208,80 @@ class AdminController {
     
         $stmt->close();
     }
+
+    public function getTotalAnnualRemittance($filters) {
+        // Base query
+        $query = "SELECT SUM(monthly_tax_payable) AS total_monthly_tax_payable FROM employee_salary_and_benefits WHERE 1=1";
+    
+        $params = [];
+        $types = '';
+    
+        // Add year filter based on created_date
+        if (!empty($filters['year'])) {
+            $query .= " AND YEAR(created_date) = ?";
+            $params[] = $filters['year'];
+            $types .= 'i';
+        }
+    
+        // Prepare and execute the query
+        $stmt = $this->conn->prepare($query);
+    
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
+    
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $data = $result->fetch_assoc();
+    
+        // Calculate the total annual remittance
+        $totalAnnualRemittance = ($data['total_monthly_tax_payable'] ?? 0) * 12;
+    
+        // Return the result
+        echo json_encode([
+            "status" => "success",
+            "total_annual_remittance" => $totalAnnualRemittance
+        ]);
+    
+        $stmt->close();
+    }
+
+    public function getMonthlyEstimate($filters) {
+        // Base query
+        $query = "SELECT SUM(annual_gross_income) AS total_monthly_estimate FROM employee_salary_and_benefits WHERE 1=1";
+    
+        $params = [];
+        $types = '';
+    
+        // Add month and year filter
+        if (!empty($filters['month']) && !empty($filters['year'])) {
+            $query .= " AND MONTH(created_date) = ? AND YEAR(created_date) = ?";
+            $params[] = $filters['month'];
+            $params[] = $filters['year'];
+            $types .= 'ii';
+        }
+    
+        // Prepare and execute the query
+        $stmt = $this->conn->prepare($query);
+    
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
+    
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $data = $result->fetch_assoc();
+    
+        // Return the result
+        echo json_encode([
+            "status" => "success",
+            "total_monthly_estimate" => $data['total_monthly_estimate'] ?? 0 // Default to 0 if no records found
+        ]);
+    
+        $stmt->close();
+    }
+    
+    
     
     
     
