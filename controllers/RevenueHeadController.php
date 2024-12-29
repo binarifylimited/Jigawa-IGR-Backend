@@ -343,6 +343,81 @@ class RevenueHeadController {
     //     $stmt->close();
     // }
 
+    // public function getRevenueHeadByFilters($filters) {
+    //     // Base query with JOIN to include MDA name
+    //     $query = "
+    //         SELECT 
+    //             rh.*, 
+    //             m.fullname AS mda_name 
+    //         FROM 
+    //             revenue_heads rh
+    //         LEFT JOIN 
+    //             mda m ON rh.mda_id = m.id
+    //         WHERE 1 = 1"; // 1 = 1 is a dummy condition to simplify appending other conditions
+        
+    //     $params = [];
+    //     $types = '';
+    
+    //     // Add conditions dynamically
+    //     if (isset($filters['id'])) {
+    //         $query .= " AND rh.id = ?";
+    //         $params[] = $filters['id'];
+    //         $types .= 'i';
+    //     }
+    
+    //     if (isset($filters['item_code'])) {
+    //         $query .= " AND rh.item_code = ?";
+    //         $params[] = $filters['item_code'];
+    //         $types .= 's';
+    //     }
+    
+    //     if (isset($filters['item_name'])) {
+    //         // Using LIKE for partial matching on item_name
+    //         $query .= " AND rh.item_name LIKE ?";
+    //         $params[] = '%' . $filters['item_name'] . '%';
+    //         $types .= 's';
+    //     }
+    
+    //     if (isset($filters['category'])) {
+    //         $query .= " AND rh.category = ?";
+    //         $params[] = $filters['category'];
+    //         $types .= 's';
+    //     }
+    
+    //     if (isset($filters['status'])) {
+    //         $query .= " AND rh.status = ?";
+    //         $params[] = $filters['status'];
+    //         $types .= 'i';
+    //     }
+    
+    //     if (isset($filters['mda_id'])) {
+    //         $query .= " AND rh.mda_id = ?";
+    //         $params[] = $filters['mda_id'];
+    //         $types .= 'i';
+    //     }
+    
+    //     // Prepare and bind the query
+    //     $stmt = $this->conn->prepare($query);
+    
+    //     if (!empty($params)) {
+    //         $stmt->bind_param($types, ...$params); // Spread operator for dynamic params
+    //     }
+    
+    //     $stmt->execute();
+    //     $result = $stmt->get_result();
+    //     $revenue_heads = $result->fetch_all(MYSQLI_ASSOC);
+    
+    //     if (count($revenue_heads) > 0) {
+    //         // Return matching revenue head(s) with MDA name
+    //         echo json_encode(['status' => 'success', 'data' => $revenue_heads]);
+    //     } else {
+    //         echo json_encode(['status' => 'error', 'message' => 'No matching revenue head found']);
+    //         http_response_code(404); // Not found
+    //     }
+    
+    //     $stmt->close();
+    // }
+
     public function getRevenueHeadByFilters($filters) {
         // Base query with JOIN to include MDA name
         $query = "
@@ -407,8 +482,35 @@ class RevenueHeadController {
         $result = $stmt->get_result();
         $revenue_heads = $result->fetch_all(MYSQLI_ASSOC);
     
+        // Fetch all paid invoices
+        $invoiceQuery = "SELECT revenue_head FROM invoices WHERE payment_status = 'paid'";
+        $stmtInvoice = $this->conn->prepare($invoiceQuery);
+        $stmtInvoice->execute();
+        $invoiceResult = $stmtInvoice->get_result();
+        $invoices = $invoiceResult->fetch_all(MYSQLI_ASSOC);
+        $stmtInvoice->close();
+    
+        // Decode and process invoice data
+        foreach ($revenue_heads as &$revenueHead) {
+            $totalRevenue = 0;
+            $revenueHeadId = $revenueHead['id'];
+    
+            foreach ($invoices as $invoice) {
+                $invoiceRevenueHeads = json_decode($invoice['revenue_head'], true);
+    
+                foreach ($invoiceRevenueHeads as $item) {
+                    if ((int)$item['revenue_head_id'] === $revenueHeadId) {
+                        $totalRevenue += (float)$item['amount'];
+                    }
+                }
+            }
+    
+            // Add total revenue to the revenue head data
+            $revenueHead['total_revenue_generated'] = $totalRevenue;
+        }
+    
         if (count($revenue_heads) > 0) {
-            // Return matching revenue head(s) with MDA name
+            // Return matching revenue head(s) with total revenue
             echo json_encode(['status' => 'success', 'data' => $revenue_heads]);
         } else {
             echo json_encode(['status' => 'error', 'message' => 'No matching revenue head found']);
@@ -417,6 +519,7 @@ class RevenueHeadController {
     
         $stmt->close();
     }
+    
     
 
     public function approveRevenueHead($data) {
