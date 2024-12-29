@@ -340,6 +340,12 @@ class TaxpayerController {
         // Query to count admin-registered taxpayers
         $adminQuery = "SELECT COUNT(*) AS total_admin FROM taxpayer WHERE created_by = 'admin'";
 
+        // Query to count Inactive taxpayers
+        $adminQueryInactiveTaxpayers = "SELECT COUNT(*) AS total_admin_inactive_taxpayer FROM taxpayer_security WHERE verification_status = 'pending'";
+
+        // Query to count Active taxpayers
+        $adminQueryActiveTaxpayers = "SELECT COUNT(*) AS total_admin_active_taxpayer FROM taxpayer_security WHERE verification_status = 'verified'";
+
         try {
             // Execute total taxpayers query
             $totalResult = $this->conn->query($totalQuery);
@@ -353,13 +359,23 @@ class TaxpayerController {
             $adminResult = $this->conn->query($adminQuery);
             $adminCount = $adminResult->fetch_assoc()['total_admin'];
 
+            // Execute inactive taxpayers query
+            $adminQueryInactiveTaxpayersResult = $this->conn->query($adminQueryInactiveTaxpayers);
+            $adminQueryInactiveTaxpayersCount = $adminQueryInactiveTaxpayersResult->fetch_assoc()['total_admin_inactive_taxpayer'];
+
+            // Execute acitve taxpayers query
+            $adminQueryActiveTaxpayersResult = $this->conn->query($adminQueryActiveTaxpayers);
+            $adminQueryActiveTaxpayersCount = $adminQueryActiveTaxpayersResult->fetch_assoc()['total_admin_active_taxpayer'];
+
             // Return JSON response
             return json_encode([
                 "status" => "success",
                 "data" => [
                     "total_registered_taxpayers" => (int)$totalCount,
                     "total_self_registered_taxpayers" => (int)$selfCount,
-                    "total_admin_registered_taxpayers" => (int)$adminCount
+                    "total_admin_registered_taxpayers" => (int)$adminCount,
+                    "total_admin_inactive_taxpayer" => (int)$adminQueryInactiveTaxpayersCount,
+                    "total_admin_active_taxpayer" => (int)$adminQueryActiveTaxpayersCount
                 ]
             ]);
         } catch (Exception $e) {
