@@ -42,6 +42,11 @@ class PaymentController {
                 return;
             }
 
+            if ($this->isDemandNoticeInvoicePaid($paymentData['invoice_number'])) {
+                $responseGate = json_encode(['status' => 'error', 'message' => 'This invoice is already paid']);
+                return;
+            }
+
             if ($this->isPaymentExist($paymentData['invoice_number'])) {
                 $responseGate = json_encode(['status' => 'error', 'message' => 'The payment for associated invoice already exists']);
                 return;
@@ -177,6 +182,19 @@ class PaymentController {
     // Check if the invoice is already paid
     private function isInvoicePaid($invoice_number) {
         $query = "SELECT payment_status FROM invoices WHERE invoice_number = ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bind_param('s', $invoice_number);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($row = $result->fetch_assoc()) {
+            return $row['payment_status'] === 'paid';
+        }
+        return false;
+    }
+
+    private function isDemandNoticeInvoicePaid($invoice_number) {
+        $query = "SELECT payment_status FROM demand_notices WHERE invoice_number = ?";
         $stmt = $this->conn->prepare($query);
         $stmt->bind_param('s', $invoice_number);
         $stmt->execute();
