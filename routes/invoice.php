@@ -60,7 +60,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $uri === '/get-demand-notice-invoice
     $filters = [
         'invoice_number' => isset($_GET['invoice_number']) ? $_GET['invoice_number'] : null,
         'tax_number' => isset($_GET['tax_number']) ? $_GET['tax_number'] : null,
-        'invoice_type' => 'demand notice', // Fixed value for demand notice
         'payment_status' => isset($_GET['payment_status']) ? $_GET['payment_status'] : null,
         'due_date_start' => isset($_GET['due_date_start']) ? $_GET['due_date_start'] : null,
         'due_date_end' => isset($_GET['due_date_end']) ? $_GET['due_date_end'] : null,

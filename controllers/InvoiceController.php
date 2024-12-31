@@ -128,6 +128,7 @@ class InvoiceController {
         $invoice_type = 'demand notice';
         $tax_office = isset($data['tax_office']) ? $data['tax_office'] : null;
         $lga = isset($data['lga']) ? $data['lga'] : null;
+        $file_number = isset($data['file_number']) ? $data['file_number'] : null;
         $description = isset($data['description']) ? $data['description'] : null;
     
         // Collect due dates based on revenue heads
@@ -160,12 +161,13 @@ class InvoiceController {
         // Insert invoice into the database
         $revenue_heads_json = json_encode($data['revenue_heads']); // Store revenue heads as a JSON array
     
-        $query = "INSERT INTO demand_notices (tax_number, invoice_type, tax_office, lga, revenue_head, invoice_number, due_date, payment_status, description, date_created)
-                  VALUES (?, ?, ?, ?, ?, ?, ?, 'unpaid', ?, NOW())";
+        $query = "INSERT INTO demand_notices (file_number, tax_number, invoice_type, tax_office, lga, revenue_head, invoice_number, due_date, payment_status, description, date_created)
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'unpaid', ?, NOW())";
     
         $stmt = $this->conn->prepare($query);
         $stmt->bind_param(
-            'ssssssss',
+            'sssssssss',
+            $file_number,
             $tax_number,
             $invoice_type,
             $tax_office,
@@ -420,9 +422,9 @@ class InvoiceController {
         $types = '';
 
         // Apply filters
-        if (isset($filters['demand_notice_number'])) {
-            $query .= " AND dn.demand_notice_number = ?";
-            $params[] = $filters['demand_notice_number'];
+        if (isset($filters['invoice_number'])) {
+            $query .= " AND dn.invoice_number = ?";
+            $params[] = $filters['invoice_number'];
             $types .= 's';
         }
 
