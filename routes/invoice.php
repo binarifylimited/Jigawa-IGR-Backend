@@ -19,6 +19,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $uri === '/create-invoice') {
     exit;
 }
 
+if ($request_method === 'POST' && $uri === '/create-demand-notice') {
+    $data = json_decode(file_get_contents("php://input"), true);
+    $invoiceController->createDemandNotice($data);
+    exit;
+}
+
+
 // Route: Fetch invoices with pagination and filters (GET)
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && $uri === '/get-invoices') {
     // $decoded_token = authenticate();  // Authenticate the request
@@ -48,6 +55,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $uri === '/get-invoices') {
     exit;
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && $uri === '/get-demand-notice-invoices') {
+    // Get filters from the query parameters
+    $filters = [
+        'invoice_number' => isset($_GET['invoice_number']) ? $_GET['invoice_number'] : null,
+        'tax_number' => isset($_GET['tax_number']) ? $_GET['tax_number'] : null,
+        'invoice_type' => 'demand notice', // Fixed value for demand notice
+        'payment_status' => isset($_GET['payment_status']) ? $_GET['payment_status'] : null,
+        'due_date_start' => isset($_GET['due_date_start']) ? $_GET['due_date_start'] : null,
+        'due_date_end' => isset($_GET['due_date_end']) ? $_GET['due_date_end'] : null,
+        'date_created_start' => isset($_GET['date_created_start']) ? $_GET['date_created_start'] : null,
+        'date_created_end' => isset($_GET['date_created_end']) ? $_GET['date_created_end'] : null,
+        'mda_code' => isset($_GET['mda_code']) ? $_GET['mda_code'] : null,
+        'item_code' => isset($_GET['item_code']) ? $_GET['item_code'] : null,
+    ];
+
+    // Pagination parameters
+    $page = isset($_GET['page']) ? $_GET['page'] : 1;
+    $limit = isset($_GET['limit']) ? $_GET['limit'] : 10;
+
+    // Call the getDemandNoticeInvoices function in InvoiceController
+    $invoiceController->getDemandNoticeInvoices(array_filter($filters), $page, $limit);
+    exit;
+}
+
+
 if ($request_method == 'GET' && $uri == '/invoices-summary') {
     $mda_id = isset($_GET['mda_id']) ? (int)$_GET['mda_id'] : null; // Optional MDA filter
     $invoiceController->getInvoiceSummary($mda_id);
@@ -57,6 +89,31 @@ if ($request_method == 'GET' && $uri == '/invoices-summary') {
 if ($request_method === 'GET' && $uri === '/get-taxpayer-invoice-stats') {
     $taxNumber = isset($_GET['tax_number']) ? $_GET['tax_number'] : null;
     $invoiceController->getInvoiceStatsByTaxNumber($taxNumber);
+    exit;
+}
+
+if ($request_method === 'GET' && $uri === '/get-special-user-stats') {
+    $payerId = isset($_GET['payer_id']) ? $_GET['payer_id'] : null;
+    $filters = [
+        'month' => isset($_GET['month']) ? $_GET['month'] : null,
+        'year' => isset($_GET['year']) ? $_GET['year'] : null
+    ];
+    $invoiceController->getSpecialUserStats($payerId, $filters);
+    exit;
+}
+
+if ($request_method === 'GET' && $uri === '/get-demand-notice-metrics') {
+    // Retrieve filters from query parameters
+    $filters = [
+        'tax_number' => isset($_GET['tax_number']) ? $_GET['tax_number'] : null,
+        'mda_code' => isset($_GET['mda_code']) ? $_GET['mda_code'] : null,
+        'item_code' => isset($_GET['item_code']) ? $_GET['item_code'] : null,
+        'date_created_start' => isset($_GET['date_created_start']) ? $_GET['date_created_start'] : null,
+        'date_created_end' => isset($_GET['date_created_end']) ? $_GET['date_created_end'] : null,
+    ];
+
+    // Call the getDemandNoticeMetrics function with the provided filters
+    $invoiceController->getDemandNoticeMetrics(array_filter($filters));
     exit;
 }
 
