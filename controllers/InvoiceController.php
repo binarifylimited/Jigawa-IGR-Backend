@@ -121,7 +121,7 @@ class InvoiceController {
         }
     
         // Generate unique invoice number
-        $invoice_number = $this->generateUniqueInvoiceNumber();
+        $invoice_number = $this->generateUniqueDemandNoticeInvoiceNumber();
     
         // Prepare values for insertion
         $tax_number = $data['tax_number'];
@@ -212,6 +212,25 @@ class InvoiceController {
         return $invoice_number;
     }
 
+    protected function generateUniqueDemandNoticeInvoiceNumber() {
+        $invoice_number = 'CDN-' . strtoupper(uniqid());
+
+        // Ensure no duplicate invoice numbers
+        $query = "SELECT id FROM demand_notices WHERE invoice_number = ? LIMIT 1";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bind_param('s', $invoice_number);
+        $stmt->execute();
+        $stmt->store_result();
+
+        // If duplicate found, recursively generate a new one
+        if ($stmt->num_rows > 0) {
+            $stmt->close();
+            return $this->generateUniqueDemandNoticeInvoiceNumber();
+        }
+
+        $stmt->close();
+        return $invoice_number;
+    }
     /**
      * Fetch the revenue head information by its ID.
      */
