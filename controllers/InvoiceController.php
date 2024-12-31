@@ -404,6 +404,8 @@ class InvoiceController {
                 COALESCE(tp.surname, etp.last_name, NULL) AS tax_last_name,
                 COALESCE(tp.email, etp.email, su.email) AS tax_email,
                 COALESCE(tp.phone, etp.phone, su.phone) AS tax_phone,
+                COALESCE(tb.business_type, etp.business_type, NULL) AS tax_business_type,
+                COALESCE(tp.address, etp.address, su.address, NULL) AS address,
                 su.industry AS special_user_industry,
                 su.staff_quota AS special_user_staff_quota,
                 su.official_TIN AS special_user_official_tin,
@@ -413,6 +415,7 @@ class InvoiceController {
                 su.category AS special_user_category
             FROM demand_notices dn
             LEFT JOIN taxpayer tp ON tp.tax_number = dn.tax_number
+            LEFT JOIN taxpayer_business tb ON tb.taxpayer_id = tp.id
             LEFT JOIN enumerator_tax_payers etp ON etp.tax_number = dn.tax_number
             LEFT JOIN special_users_ su ON su.payer_id = dn.tax_number
             WHERE 1 = 1
