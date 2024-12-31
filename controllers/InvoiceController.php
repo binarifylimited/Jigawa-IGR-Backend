@@ -492,7 +492,9 @@ class InvoiceController {
                         'previous_year_amount' => $revenueHead['previous_year_amount'] ?? null,
                         'current_year_date' => $revenueHead['current_year_date'] ?? null,
                         'current_year_amount' => $revenueHead['current_year_amount'] ?? null,
-                        'mda_name' => $revenueHeadDetails['mda_name']
+                        'mda_name' => $revenueHeadDetails['mda_name'],
+                        'mda_code' => $revenueHeadDetails['mda_code'],
+                        'item_code' => $revenueHeadDetails['item_code']
                     ];
                 }
             }
@@ -525,7 +527,7 @@ class InvoiceController {
     
     private function getRevenueHeadDetails($revenueHeadId) {
         $query = "
-            SELECT rh.item_name, m.fullname AS mda_name 
+            SELECT rh.item_name, rh.item_code, m.mda_code, m.fullname AS mda_name 
             FROM revenue_heads rh 
             LEFT JOIN mda m ON rh.mda_id = m.id 
             WHERE rh.id = ?
