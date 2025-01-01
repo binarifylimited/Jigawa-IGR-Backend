@@ -234,7 +234,7 @@ class RegistrationController {
         $taxNumberToCheck = $data['tax_number'];
         if (!$this->isTaxNumberExists($taxNumberToCheck)) {
             echo json_encode(['status' => 'error', 'message' => 'Tax number is not registered. Please']);
-            
+            return;
         } 
 
 
