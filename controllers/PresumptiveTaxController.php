@@ -139,6 +139,65 @@ class TaxController {
         echo json_encode($response);
     }
 
+    public function getAllPresumptiveTaxes($filters = [])
+    {
+        // Base query
+        $query = "
+            SELECT 
+                pt.id AS tax_id,
+                ptb.business_type,
+                pt.micro,
+                pt.small,
+                pt.medium,
+                pt.frequency
+            FROM 
+                presumptive_tax pt
+            INNER JOIN 
+                presumptive_tax_businesses ptb 
+            ON 
+                pt.business_id = ptb.id
+            WHERE 1=1
+        ";
+
+        $params = [];
+        $types = '';
+
+        // Add filters dynamically
+        if (isset($filters['business_type'])) {
+            $query .= " AND ptb.business_type LIKE ?";
+            $params[] = '%' . $filters['business_type'] . '%';
+            $types .= 's';
+        }
+
+        if (isset($filters['frequency'])) {
+            $query .= " AND pt.frequency = ?";
+            $params[] = $filters['frequency'];
+            $types .= 's';
+        }
+
+        // Prepare the query
+        $stmt = $this->conn->prepare($query);
+
+        // Bind parameters if available
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
+
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $presumptiveTaxes = $result->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+
+        // Check if records exist
+        if (!empty($presumptiveTaxes)) {
+            echo json_encode(['status' => 'success', 'data' => $presumptiveTaxes]);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'No presumptive taxes found']);
+            http_response_code(404); // Not Found
+        }
+    }
+
+
 
 
 
