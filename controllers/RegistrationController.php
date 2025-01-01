@@ -225,21 +225,23 @@ class RegistrationController {
      */
     public function registerSpecialUser($data) {
         // Validate required fields
-        if (!isset($data['name'], $data['email'], $data['phone'], $data['password'], $data['state'], $data['lga'], $data['address'], $data['industry'], $data['official_TIN'], $data['category'])) {
+        if (!isset($data['tax_number'], $data['name'], $data['email'], $data['phone'], $data['password'], $data['state'], $data['lga'], $data['address'], $data['industry'], $data['official_TIN'], $data['category'])) {
             echo json_encode(['status' => 'error', 'message' => 'Missing required fields: name, email, phone, password, state, lga, address, industry, official_TIN, category']);
             http_response_code(400); // Bad request
             return;
         }
 
         // Check if the email or phone already exists in the 'special_users_' table
-        if (isDuplicateUser($this->conn, 'special_users_', $data['email'], $data['phone'])) {
-            echo json_encode(['status' => 'error', 'message' => 'Special user with this email or phone number already exists']);
-            http_response_code(409); // Conflict
-            return;
-        }
+        // if (isDuplicateUser($this->conn, 'special_users_', $data['email'], $data['phone'])) {
+        //     echo json_encode(['status' => 'error', 'message' => 'Special user with this email or phone number already exists']);
+        //     http_response_code(409); // Conflict
+        //     return;
+        // }
 
         // Generate a unique 10-digit payer_id
-        $payer_id = $this->generateUniquePayerId();
+        // $payer_id = $this->generateUniquePayerId();
+        $payer_id = $data['tax_number'];
+
 
         // Hash the password
         $hashed_password = password_hash($data['password'], PASSWORD_BCRYPT);
@@ -269,9 +271,9 @@ class RegistrationController {
         // Execute the query
         if ($stmt->execute()) {
             $special_user_id = $stmt->insert_id;
-            echo json_encode(['status' => 'success', 'message' => 'Special User registered successfully', 'special_user_id' => $special_user_id, 'payer_id' => $payer_id]);
+            echo json_encode(['status' => 'success', 'message' => 'Organization registered successfully', 'special_user_id' => $special_user_id, 'payer_id' => $payer_id]);
         } else {
-            echo json_encode(['status' => 'error', 'message' => 'Error registering special user: ' . $stmt->error]);
+            echo json_encode(['status' => 'error', 'message' => 'Error registering organization: ' . $stmt->error]);
         }
 
         $stmt->close();
