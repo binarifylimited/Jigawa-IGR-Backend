@@ -578,18 +578,24 @@ class RegistrationController {
         do {
             // Generate a random 10-digit tax number
             $tax_number = random_int(1000000000, 9999999999);
-
-            // Check if the tax_number is already in use
-            $query = "SELECT id FROM taxpayer WHERE tax_number = ? LIMIT 1";
+    
+            // Check if the tax_number exists in either taxpayer or enumerator_tax_payers table
+            $query = "
+                SELECT id FROM taxpayer WHERE tax_number = ? 
+                UNION 
+                SELECT id FROM enumerator_tax_payers WHERE tax_number = ? 
+                LIMIT 1
+            ";
             $stmt = $this->conn->prepare($query);
-            $stmt->bind_param('i', $tax_number);
+            $stmt->bind_param('ii', $tax_number, $tax_number);
             $stmt->execute();
             $stmt->store_result();
-
+    
         } while ($stmt->num_rows > 0);
-
+    
         return $tax_number;
     }
+    
 
     // Helper function to insert business details
     private function registerTaxpayerBusiness($taxpayer_id, $data) {
@@ -882,16 +888,22 @@ class RegistrationController {
         do {
             // Generate a random 10-digit tax number
             $tax_number = random_int(1000000000, 9999999999);
-
-            // Check if the tax_number is already in use
-            $query = "SELECT id FROM enumerator_tax_payers WHERE tax_number = ? LIMIT 1";
+    
+            // Check if the tax_number exists in either enumerator_tax_payers or taxpayer table
+            $query = "
+                SELECT id FROM enumerator_tax_payers WHERE tax_number = ? 
+                UNION 
+                SELECT id FROM taxpayer WHERE tax_number = ? 
+                LIMIT 1
+            ";
             $stmt = $this->conn->prepare($query);
-            $stmt->bind_param('i', $tax_number);
+            $stmt->bind_param('ii', $tax_number, $tax_number);
             $stmt->execute();
             $stmt->store_result();
-
+    
         } while ($stmt->num_rows > 0);
-
+    
         return $tax_number;
     }
+    
 }
