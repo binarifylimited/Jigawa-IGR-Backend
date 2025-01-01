@@ -231,12 +231,21 @@ class RegistrationController {
             return;
         }
 
+        $taxNumberToCheck = $data['tax_number'];
+        if (!$this->isTaxNumberExists($taxNumberToCheck)) {
+            echo json_encode(['status' => 'error', 'message' => 'Tax number is not registered. Please']);
+            
+        } 
+
+
+
         // Check if the email or phone already exists in the 'special_users_' table
         // if (isDuplicateUser($this->conn, 'special_users_', $data['email'], $data['phone'])) {
         //     echo json_encode(['status' => 'error', 'message' => 'Special user with this email or phone number already exists']);
         //     http_response_code(409); // Conflict
         //     return;
         // }
+
 
         // Generate a unique 10-digit payer_id
         // $payer_id = $this->generateUniquePayerId();
@@ -278,6 +287,36 @@ class RegistrationController {
 
         $stmt->close();
     }
+
+    public function isTaxNumberExists($taxNumber)
+    {
+        // Define the tables to check
+        $tables = [
+            'taxpayer',
+            'enumerator_tax_payers'
+        ];
+
+        foreach ($tables as $table) {
+            // Prepare the query
+            $query = "SELECT id FROM {$table} WHERE tax_number = ? LIMIT 1";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bind_param('s', $taxNumber);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            // If a record is found, return true
+            if ($result->num_rows > 0) {
+                $stmt->close();
+                return true;
+            }
+
+            $stmt->close();
+        }
+
+        // If no match is found, return false
+        return false;
+    }
+
 
     /**
      * Generate a unique 10-digit payer_id.
