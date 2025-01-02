@@ -330,14 +330,12 @@ class TaxpayerController {
 
     public function getAllTaxpayers($queryParams)
 {
-    // Initialize results
     $taxpayers = [];
 
-    // Define query parameters
     $params = [];
     $types = "";
 
-    // Filters for taxpayer table
+    // Define taxpayer query
     $taxpayerQuery = "
         SELECT t.id, t.created_by, t.tax_number, t.category, t.presumptive, t.first_name, 
                t.surname, t.email, t.phone, t.state, t.lga, t.address, t.employment_status, 
@@ -348,7 +346,7 @@ class TaxpayerController {
         WHERE 1=1
     ";
 
-    // Filters for enumerator_tax_payers table
+    // Define enumerator query
     $enumeratorQuery = "
         SELECT etp.id, NULL AS created_by, etp.tax_number, NULL AS category, NULL AS presumptive, 
                etp.first_name, etp.last_name AS surname, etp.email, etp.phone, 
@@ -360,53 +358,124 @@ class TaxpayerController {
         WHERE 1=1
     ";
 
-    // Apply filters to both queries
-    if (!empty($queryParams['tax_number'])) {
-        $taxpayerQuery .= " AND t.tax_number LIKE ?";
-        $enumeratorQuery .= " AND etp.tax_number LIKE ?";
-        $params[] = '%' . $queryParams['tax_number'] . '%';
-        $types .= "s";
-    }
-    if (!empty($queryParams['first_name'])) {
-        $taxpayerQuery .= " AND t.first_name LIKE ?";
-        $enumeratorQuery .= " AND etp.first_name LIKE ?";
-        $params[] = '%' . $queryParams['first_name'] . '%';
-        $types .= "s";
-    }
-    if (!empty($queryParams['surname'])) {
-        $taxpayerQuery .= " AND t.surname LIKE ?";
-        $enumeratorQuery .= " AND etp.last_name LIKE ?";
-        $params[] = '%' . $queryParams['surname'] . '%';
-        $types .= "s";
-    }
-    if (!empty($queryParams['phone'])) {
-        $taxpayerQuery .= " AND t.phone = ?";
-        $enumeratorQuery .= " AND etp.phone = ?";
-        $params[] = $queryParams['phone'];
-        $types .= "s";
-    }
-    if (!empty($queryParams['email'])) {
-        $taxpayerQuery .= " AND t.email LIKE ?";
-        $enumeratorQuery .= " AND etp.email LIKE ?";
-        $params[] = '%' . $queryParams['email'] . '%';
-        $types .= "s";
-    }
-    if (!empty($queryParams['state'])) {
-        $taxpayerQuery .= " AND t.state = ?";
-        $enumeratorQuery .= " AND etp.state = ?";
-        $params[] = $queryParams['state'];
-        $types .= "s";
-    }
-    if (!empty($queryParams['lga'])) {
-        $taxpayerQuery .= " AND t.lga = ?";
-        $enumeratorQuery .= " AND etp.lga = ?";
-        $params[] = $queryParams['lga'];
-        $types .= "s";
+    // Add filters to taxpayer query
+    foreach ($queryParams as $key => $value) {
+        switch ($key) {
+            case 'id':
+                $taxpayerQuery .= " AND t.id = ?";
+                $enumeratorQuery .= " AND etp.id = ?";
+                $params[] = $value;
+                $types .= "i";
+                break;
+            case 'created_by':
+                $taxpayerQuery .= " AND t.created_by = ?";
+                $params[] = $value;
+                $types .= "s";
+                break;
+            case 'tax_number':
+                $taxpayerQuery .= " AND t.tax_number LIKE ?";
+                $enumeratorQuery .= " AND etp.tax_number LIKE ?";
+                $params[] = '%' . $value . '%';
+                $types .= "s";
+                break;
+            case 'category':
+                $taxpayerQuery .= " AND t.category = ?";
+                $params[] = $value;
+                $types .= "s";
+                break;
+            case 'presumptive':
+                $taxpayerQuery .= " AND t.presumptive = ?";
+                $params[] = $value;
+                $types .= "s";
+                break;
+            case 'first_name':
+                $taxpayerQuery .= " AND t.first_name LIKE ?";
+                $enumeratorQuery .= " AND etp.first_name LIKE ?";
+                $params[] = '%' . $value . '%';
+                $types .= "s";
+                break;
+            case 'surname':
+                $taxpayerQuery .= " AND t.surname LIKE ?";
+                $enumeratorQuery .= " AND etp.last_name LIKE ?";
+                $params[] = '%' . $value . '%';
+                $types .= "s";
+                break;
+            case 'email':
+                $taxpayerQuery .= " AND t.email LIKE ?";
+                $enumeratorQuery .= " AND etp.email LIKE ?";
+                $params[] = '%' . $value . '%';
+                $types .= "s";
+                break;
+            case 'phone':
+                $taxpayerQuery .= " AND t.phone = ?";
+                $enumeratorQuery .= " AND etp.phone = ?";
+                $params[] = $value;
+                $types .= "s";
+                break;
+            case 'state':
+                $taxpayerQuery .= " AND t.state = ?";
+                $enumeratorQuery .= " AND etp.state = ?";
+                $params[] = $value;
+                $types .= "s";
+                break;
+            case 'lga':
+                $taxpayerQuery .= " AND t.lga = ?";
+                $enumeratorQuery .= " AND etp.lga = ?";
+                $params[] = $value;
+                $types .= "s";
+                break;
+            case 'address':
+                $taxpayerQuery .= " AND t.address LIKE ?";
+                $enumeratorQuery .= " AND etp.address LIKE ?";
+                $params[] = '%' . $value . '%';
+                $types .= "s";
+                break;
+            case 'employment_status':
+                $taxpayerQuery .= " AND t.employment_status = ?";
+                $enumeratorQuery .= " AND etp.employment_status = ?";
+                $params[] = $value;
+                $types .= "s";
+                break;
+            case 'number_of_staff_min':
+            case 'number_of_staff_max':
+                if (isset($queryParams['number_of_staff_min'], $queryParams['number_of_staff_max'])) {
+                    $taxpayerQuery .= " AND t.number_of_staff BETWEEN ? AND ?";
+                    $enumeratorQuery .= " AND etp.staff_quota BETWEEN ? AND ?";
+                    $params[] = $queryParams['number_of_staff_min'];
+                    $params[] = $queryParams['number_of_staff_max'];
+                    $types .= "ii";
+                }
+                break;
+            case 'business_own':
+                $taxpayerQuery .= " AND t.business_own = ?";
+                $params[] = $value;
+                $types .= "s";
+                break;
+            case 'created_time_start':
+            case 'created_time_end':
+                if (isset($queryParams['created_time_start'], $queryParams['created_time_end'])) {
+                    $taxpayerQuery .= " AND t.created_time BETWEEN ? AND ?";
+                    $enumeratorQuery .= " AND etp.timeIn BETWEEN ? AND ?";
+                    $params[] = $queryParams['created_time_start'];
+                    $params[] = $queryParams['created_time_end'];
+                    $types .= "ss";
+                }
+                break;
+            case 'updated_time_start':
+            case 'updated_time_end':
+                if (isset($queryParams['updated_time_start'], $queryParams['updated_time_end'])) {
+                    $taxpayerQuery .= " AND t.updated_time BETWEEN ? AND ?";
+                    $params[] = $queryParams['updated_time_start'];
+                    $params[] = $queryParams['updated_time_end'];
+                    $types .= "ss";
+                }
+                break;
+        }
     }
 
     // Execute taxpayer query
     $stmt1 = $this->conn->prepare($taxpayerQuery);
-    if (!empty($params)) {
+    if (!empty($types)) {
         $stmt1->bind_param($types, ...$params);
     }
     $stmt1->execute();
@@ -418,7 +487,7 @@ class TaxpayerController {
 
     // Execute enumerator query
     $stmt2 = $this->conn->prepare($enumeratorQuery);
-    if (!empty($params)) {
+    if (!empty($types)) {
         $stmt2->bind_param($types, ...$params);
     }
     $stmt2->execute();
@@ -428,12 +497,7 @@ class TaxpayerController {
     }
     $stmt2->close();
 
-    // Sort results by created_time
-    usort($taxpayers, function ($a, $b) {
-        return strtotime($b['created_time']) - strtotime($a['created_time']);
-    });
-
-    // Pagination in PHP
+    // Pagination
     $page = isset($queryParams['page']) ? (int)$queryParams['page'] : 1;
     $limit = isset($queryParams['limit']) ? (int)$queryParams['limit'] : 10;
     $offset = ($page - 1) * $limit;
@@ -442,7 +506,7 @@ class TaxpayerController {
     $totalRecords = count($taxpayers);
     $totalPages = ceil($totalRecords / $limit);
 
-    // Return JSON response
+    // Return the response
     echo json_encode([
         "status" => "success",
         "data" => $paginatedTaxpayers,
