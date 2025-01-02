@@ -319,26 +319,211 @@ class PaymentController {
     }
 
     // Retrieve payment collection with optional filters and associated revenue heads
+    // public function getPaymentCollection($queryParams) {
+    //     // Set default pagination parameters
+    //     $page = isset($queryParams['page']) ? (int)$queryParams['page'] : 1;
+    //     $limit = isset($queryParams['limit']) ? (int)$queryParams['limit'] : 10;
+    //     $offset = ($page - 1) * $limit;
+    
+    //     // Base query with corrected JOINs to get payment, invoice, and user details
+    //     $query = "SELECT 
+    //                 pc.*, 
+    //                 inv.revenue_head AS invoice_revenue_heads,
+    //                 t.first_name AS taxpayer_first_name, 
+    //                 t.surname AS taxpayer_surname, 
+    //                 t.email AS taxpayer_email, 
+    //                 t.phone AS taxpayer_phone, 
+    //                 etp.first_name AS enumerator_first_name, 
+    //                 etp.last_name AS enumerator_last_name, 
+    //                 etp.email AS enumerator_email, 
+    //                 etp.phone AS enumerator_phone
+    //               FROM payment_collection pc
+    //               LEFT JOIN invoices inv ON pc.invoice_number = inv.invoice_number
+    //               LEFT JOIN taxpayer t ON pc.user_id = t.tax_number
+    //               LEFT JOIN enumerator_tax_payers etp ON pc.user_id = etp.tax_number
+    //               WHERE 1=1";
+    
+    //     $params = [];
+    //     $types = "";
+    
+    //     // Apply filters if provided in query parameters
+    //     if (!empty($queryParams['invoice_number'])) {
+    //         $query .= " AND pc.invoice_number = ?";
+    //         $params[] = $queryParams['invoice_number'];
+    //         $types .= "s";
+    //     }
+
+    //     if (!empty($queryParams['tax_number'])) {
+    //         $query .= " AND pc.user_id = ?";
+    //         $params[] = $queryParams['tax_number'];
+    //         $types .= "s";
+    //     }
+    
+    //     if (!empty($queryParams['payment_reference_number'])) {
+    //         $query .= " AND pc.payment_reference_number = ?";
+    //         $params[] = $queryParams['payment_reference_number'];
+    //         $types .= "s";
+    //     }
+    
+    //     if (!empty($queryParams['status'])) {
+    //         $query .= " AND pc.payment_status = ?";
+    //         $params[] = $queryParams['status'];
+    //         $types .= "s";
+    //     }
+    
+    //     if (!empty($queryParams['start_date']) && !empty($queryParams['end_date'])) {
+    //         $query .= " AND pc.date_payment_created BETWEEN ? AND ?";
+    //         $params[] = $queryParams['start_date'];
+    //         $params[] = $queryParams['end_date'];
+    //         $types .= "ss";
+    //     }
+    
+    //     if (!empty($queryParams['payment_channel'])) {
+    //         $query .= " AND pc.payment_channel = ?";
+    //         $params[] = $queryParams['payment_channel'];
+    //         $types .= "s";
+    //     }
+    
+    //     if (!empty($queryParams['payment_method'])) {
+    //         $query .= " AND pc.payment_method = ?";
+    //         $params[] = $queryParams['payment_method'];
+    //         $types .= "s";
+    //     }
+    
+    //     if (!empty($queryParams['payment_bank'])) {
+    //         $query .= " AND pc.payment_bank = ?";
+    //         $params[] = $queryParams['payment_bank'];
+    //         $types .= "s";
+    //     }
+    
+    //     if (!empty($queryParams['payment_gateway'])) {
+    //         $query .= " AND pc.payment_gateway = ?";
+    //         $params[] = $queryParams['payment_gateway'];
+    //         $types .= "s";
+    //     }
+    
+    //     // Add pagination
+    //     $query .= " LIMIT ? OFFSET ?";
+    //     $params[] = $limit;
+    //     $params[] = $offset;
+    //     $types .= "ii";
+    
+    //     // Prepare and execute query
+    //     $stmt = $this->conn->prepare($query);
+    //     if ($types) {
+    //         $stmt->bind_param($types, ...$params);
+    //     }
+    //     $stmt->execute();
+    //     $result = $stmt->get_result();
+    
+    //     // Fetch and format results
+    //     $payments = [];
+    //     while ($row = $result->fetch_assoc()) {
+    //         // Decode revenue_head JSON from invoice table
+    //         $revenueHeads = json_decode($row['invoice_revenue_heads'], true);
+    //         $row['associated_revenue_heads'] = [];
+    
+    //         // For each revenue head, fetch details from revenue_heads and mda tables
+    //         foreach ($revenueHeads as $revenueHead) {
+    //             $queryRevenueHead = "
+    //                 SELECT rh.item_name, rh.category, rh.amount, m.fullname 
+    //                 FROM revenue_heads rh
+    //                 JOIN mda m ON rh.mda_id = m.id
+    //                 WHERE rh.id = ?";
+    //             $stmtRevenueHead = $this->conn->prepare($queryRevenueHead);
+    //             $stmtRevenueHead->bind_param('i', $revenueHead['revenue_head_id']);
+    //             $stmtRevenueHead->execute();
+    //             $revenueResult = $stmtRevenueHead->get_result();
+    
+    //             if ($revenueDetails = $revenueResult->fetch_assoc()) {
+    //                 $row['associated_revenue_heads'][] = [
+    //                     'revenue_head_id' => $revenueHead['revenue_head_id'],
+    //                     'item_name' => $revenueDetails['item_name'],
+    //                     'category' => $revenueDetails['category'],
+    //                     'amount' => $revenueHead['amount'],
+    //                     'mda_name' => $revenueDetails['fullname']
+    //                 ];
+    //             }
+    //             $stmtRevenueHead->close();
+    //         }
+    
+    //         // Include user information
+    //         $row['user_info'] = [
+    //             "first_name" => $row['taxpayer_first_name'] ?? $row['enumerator_first_name'],
+    //             "surname" => $row['taxpayer_surname'] ?? $row['enumerator_last_name'],
+    //             "email" => $row['taxpayer_email'] ?? $row['enumerator_email'],
+    //             "phone" => $row['taxpayer_phone'] ?? $row['enumerator_phone']
+    //         ];
+    
+    //         unset(
+    //             $row['taxpayer_first_name'], $row['taxpayer_surname'], $row['taxpayer_email'], $row['taxpayer_phone'],
+    //             $row['enumerator_first_name'], $row['enumerator_last_name'], $row['enumerator_email'], $row['enumerator_phone']
+    //         );
+    
+    //         $payments[] = $row;
+    //     }
+    
+    //     // Get total count for pagination
+    //     $totalQuery = "SELECT COUNT(*) as total FROM payment_collection WHERE 1=1";
+    //     if (!empty($queryParams['invoice_number'])) {
+    //         $totalQuery .= " AND invoice_number = '" . $queryParams['invoice_number'] . "'";
+    //     }
+    //     if (!empty($queryParams['payment_reference_number'])) {
+    //         $totalQuery .= " AND payment_reference_number = '" . $queryParams['payment_reference_number'] . "'";
+    //     }
+    //     if (!empty($queryParams['status'])) {
+    //         $totalQuery .= " AND payment_status = '" . $queryParams['status'] . "'";
+    //     }
+    //     if (!empty($queryParams['start_date']) && !empty($queryParams['end_date'])) {
+    //         $totalQuery .= " AND date_payment_created BETWEEN '" . $queryParams['start_date'] . "' AND '" . $queryParams['end_date'] . "'";
+    //     }
+    //     if (!empty($queryParams['payment_channel'])) {
+    //         $totalQuery .= " AND payment_channel = '" . $queryParams['payment_channel'] . "'";
+    //     }
+    //     if (!empty($queryParams['payment_method'])) {
+    //         $totalQuery .= " AND payment_method = '" . $queryParams['payment_method'] . "'";
+    //     }
+    //     if (!empty($queryParams['payment_bank'])) {
+    //         $totalQuery .= " AND payment_bank = '" . $queryParams['payment_bank'] . "'";
+    //     }
+    //     if (!empty($queryParams['payment_gateway'])) {
+    //         $totalQuery .= " AND payment_gateway = '" . $queryParams['payment_gateway'] . "'";
+    //     }
+    
+    //     $totalResult = $this->conn->query($totalQuery);
+    //     $total = $totalResult->fetch_assoc()['total'];
+    //     $totalPages = ceil($total / $limit);
+    
+    //     // Return structured response
+    //     return json_encode([
+    //         "status" => "success",
+    //         "data" => $payments,
+    //         "pagination" => [
+    //             "current_page" => $page,
+    //             "per_page" => $limit,
+    //             "total_pages" => $totalPages,
+    //             "total_records" => $total
+    //         ]
+    //     ]);
+    // }
+
     public function getPaymentCollection($queryParams) {
         // Set default pagination parameters
         $page = isset($queryParams['page']) ? (int)$queryParams['page'] : 1;
         $limit = isset($queryParams['limit']) ? (int)$queryParams['limit'] : 10;
         $offset = ($page - 1) * $limit;
     
-        // Base query with corrected JOINs to get payment, invoice, and user details
+        // Base query with JOINs to get payment, invoice/demand_notice, and user details
         $query = "SELECT 
                     pc.*, 
-                    inv.revenue_head AS invoice_revenue_heads,
-                    t.first_name AS taxpayer_first_name, 
-                    t.surname AS taxpayer_surname, 
-                    t.email AS taxpayer_email, 
-                    t.phone AS taxpayer_phone, 
-                    etp.first_name AS enumerator_first_name, 
-                    etp.last_name AS enumerator_last_name, 
-                    etp.email AS enumerator_email, 
-                    etp.phone AS enumerator_phone
+                    IFNULL(inv.revenue_head, dn.revenue_head) AS invoice_revenue_heads,
+                    IFNULL(t.first_name, etp.first_name) AS taxpayer_first_name, 
+                    IFNULL(t.surname, etp.last_name) AS taxpayer_surname, 
+                    IFNULL(t.email, etp.email) AS taxpayer_email, 
+                    IFNULL(t.phone, etp.phone) AS taxpayer_phone
                   FROM payment_collection pc
                   LEFT JOIN invoices inv ON pc.invoice_number = inv.invoice_number
+                  LEFT JOIN demand_notices dn ON pc.invoice_number = dn.invoice_number
                   LEFT JOIN taxpayer t ON pc.user_id = t.tax_number
                   LEFT JOIN enumerator_tax_payers etp ON pc.user_id = etp.tax_number
                   WHERE 1=1";
@@ -352,7 +537,7 @@ class PaymentController {
             $params[] = $queryParams['invoice_number'];
             $types .= "s";
         }
-
+    
         if (!empty($queryParams['tax_number'])) {
             $query .= " AND pc.user_id = ?";
             $params[] = $queryParams['tax_number'];
@@ -419,7 +604,7 @@ class PaymentController {
         // Fetch and format results
         $payments = [];
         while ($row = $result->fetch_assoc()) {
-            // Decode revenue_head JSON from invoice table
+            // Decode revenue_head JSON from invoice/demand_notice table
             $revenueHeads = json_decode($row['invoice_revenue_heads'], true);
             $row['associated_revenue_heads'] = [];
     
@@ -436,11 +621,21 @@ class PaymentController {
                 $revenueResult = $stmtRevenueHead->get_result();
     
                 if ($revenueDetails = $revenueResult->fetch_assoc()) {
+                    // Calculate the total amount for demand notices
+                    $totalAmount = 0;
+                    if (isset($revenueHead['previous_year_amount']) && isset($revenueHead['current_year_amount'])) {
+                        $totalAmount = $revenueHead['previous_year_amount'] + $revenueHead['current_year_amount'];
+                    }
+    
                     $row['associated_revenue_heads'][] = [
                         'revenue_head_id' => $revenueHead['revenue_head_id'],
                         'item_name' => $revenueDetails['item_name'],
                         'category' => $revenueDetails['category'],
-                        'amount' => $revenueHead['amount'],
+                        'previous_year_date' => $revenueHead['previous_year_date'] ?? null,
+                        'previous_year_amount' => $revenueHead['previous_year_amount'] ?? 0,
+                        'current_year_date' => $revenueHead['current_year_date'] ?? null,
+                        'current_year_amount' => $revenueHead['current_year_amount'] ?? 0,
+                        'total_amount' => $totalAmount,
                         'mda_name' => $revenueDetails['fullname']
                     ];
                 }
@@ -449,16 +644,13 @@ class PaymentController {
     
             // Include user information
             $row['user_info'] = [
-                "first_name" => $row['taxpayer_first_name'] ?? $row['enumerator_first_name'],
-                "surname" => $row['taxpayer_surname'] ?? $row['enumerator_last_name'],
-                "email" => $row['taxpayer_email'] ?? $row['enumerator_email'],
-                "phone" => $row['taxpayer_phone'] ?? $row['enumerator_phone']
+                "first_name" => $row['taxpayer_first_name'],
+                "surname" => $row['taxpayer_surname'],
+                "email" => $row['taxpayer_email'],
+                "phone" => $row['taxpayer_phone']
             ];
     
-            unset(
-                $row['taxpayer_first_name'], $row['taxpayer_surname'], $row['taxpayer_email'], $row['taxpayer_phone'],
-                $row['enumerator_first_name'], $row['enumerator_last_name'], $row['enumerator_email'], $row['enumerator_phone']
-            );
+            unset($row['taxpayer_first_name'], $row['taxpayer_surname'], $row['taxpayer_email'], $row['taxpayer_phone']);
     
             $payments[] = $row;
         }
@@ -506,6 +698,8 @@ class PaymentController {
             ]
         ]);
     }
+    
+    
     
     
 
