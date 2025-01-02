@@ -628,6 +628,7 @@ class PaymentController {
                     }
     
                     $row['associated_revenue_heads'][] = [
+                        'amount' => $revenueHead['amount']  ?? 0,
                         'revenue_head_id' => $revenueHead['revenue_head_id'],
                         'item_name' => $revenueDetails['item_name'],
                         'category' => $revenueDetails['category'],
