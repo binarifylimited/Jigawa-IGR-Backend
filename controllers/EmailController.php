@@ -3,7 +3,7 @@
 class EmailController
 {
     private $apiUrl = "https://api.brevo.com/v3/smtp/email";
-    private $apiKey = "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";
+    private $apiKey = "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";
 
     public function invoiceEmail($email, $first_name, $due_date, $invoice_number, $revenue_head)
     {
