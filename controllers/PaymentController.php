@@ -607,7 +607,7 @@ class PaymentController {
             // Decode revenue_head JSON from invoice/demand_notice table
             $revenueHeads = json_decode($row['invoice_revenue_heads'], true);
             $row['associated_revenue_heads'] = [];
-    
+            $row['tax_number'] = $row['user_id'];
             // For each revenue head, fetch details from revenue_heads and mda tables
             foreach ($revenueHeads as $revenueHead) {
                 $queryRevenueHead = "
@@ -682,7 +682,7 @@ class PaymentController {
         if (!empty($queryParams['payment_gateway'])) {
             $totalQuery .= " AND payment_gateway = '" . $queryParams['payment_gateway'] . "'";
         }
-    
+       
         $totalResult = $this->conn->query($totalQuery);
         $total = $totalResult->fetch_assoc()['total'];
         $totalPages = ceil($total / $limit);
