@@ -57,6 +57,7 @@ class PaymentController {
 
             if ($this->insertPayment($paymentData)) {
                 $this->updateInvoiceStatus($paymentData['invoice_number'], $paymentData['amount_paid']);
+                $this->updateDemandNoticeStatus($paymentData['invoice_number'], $paymentData['amount_paid']);
                 $responseGate = json_encode(['status' => 'success', 'message' => 'Payment registered successfully']);
             } else {
                 $responseGate = json_encode(['status' => 'error', 'message' => 'Failed to register payment']);
@@ -246,6 +247,14 @@ class PaymentController {
     // Update invoice payment status in the invoices table
     private function updateInvoiceStatus($invoiceNumber, $amountPaid) {
         $query = "UPDATE invoices SET payment_status = 'Paid', amount_paid = ? WHERE invoice_number = ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bind_param('ds', $amountPaid, $invoiceNumber);
+        $stmt->execute();
+        $stmt->close();
+    }
+    // Update demand notice payment status in the invoices table
+    private function updateDemandNoticeStatus($invoiceNumber, $amountPaid) {
+        $query = "UPDATE demand_notices SET payment_status = 'Paid', amount_paid = ? WHERE invoice_number = ?";
         $stmt = $this->conn->prepare($query);
         $stmt->bind_param('ds', $amountPaid, $invoiceNumber);
         $stmt->execute();
