@@ -1,6 +1,8 @@
 <?php
 require_once 'config/database.php';
+require_once 'controllers/EmailController.php';
 
+$emailController = new EmailController();
 class TaxpayerController {
     private $conn;
 
@@ -140,7 +142,7 @@ class TaxpayerController {
 
         // Check if taxpayer exists
         $query = "
-            SELECT ts.verification_status, t.id AS taxpayer_id
+            SELECT ts.verification_status, t.id AS taxpayer_id, t.email, t.first_name, t.surname
             FROM taxpayer t
             INNER JOIN taxpayer_security ts ON t.id = ts.taxpayer_id
             WHERE t.tax_number = ? OR t.phone = ? OR t.email = ?
@@ -155,7 +157,6 @@ class TaxpayerController {
         }
 
         $taxpayer = $result->fetch_assoc();
-
         // Check if the account is already verified
         if ($taxpayer['verification_status'] === 'verified') {
             return json_encode(["status" => "error", "message" => "Account is already verified"]);
@@ -170,7 +171,10 @@ class TaxpayerController {
         $updateStmt->bind_param("si", $newVerificationCode, $taxpayer['taxpayer_id']);
         $updateStmt->execute();
 
+
         if ($updateStmt->affected_rows > 0) {
+            global $emailController;
+            $emailController->userVerificationEmail($taxpayer['email'], $taxpayer['first_name'], $taxpayer['surname'], $newVerificationCode);
             return json_encode([
                 "status" => "success",
                 "message" => "New verification code generated",
