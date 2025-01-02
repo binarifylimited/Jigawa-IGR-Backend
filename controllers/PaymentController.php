@@ -625,10 +625,11 @@ class PaymentController {
                     $totalAmount = 0;
                     if (isset($revenueHead['previous_year_amount']) && isset($revenueHead['current_year_amount'])) {
                         $totalAmount = $revenueHead['previous_year_amount'] + $revenueHead['current_year_amount'];
+                        
                     }
     
                     $row['associated_revenue_heads'][] = [
-                        'amount' => $revenueHead['amount']  ?? 0,
+                        'amount' => $revenueHead['amount']  ?? $totalAmount,
                         'revenue_head_id' => $revenueHead['revenue_head_id'],
                         'item_name' => $revenueDetails['item_name'],
                         'category' => $revenueDetails['category'],
@@ -636,7 +637,6 @@ class PaymentController {
                         'previous_year_amount' => $revenueHead['previous_year_amount'] ?? 0,
                         'current_year_date' => $revenueHead['current_year_date'] ?? null,
                         'current_year_amount' => $revenueHead['current_year_amount'] ?? 0,
-                        'total_amount' => $totalAmount,
                         'mda_name' => $revenueDetails['fullname']
                     ];
                 }
