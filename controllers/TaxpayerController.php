@@ -329,119 +329,131 @@ class TaxpayerController {
     // }
 
     public function getAllTaxpayers($queryParams)
-    {
-        // Initialize results
-        $taxpayers = [];
+{
+    // Initialize results
+    $taxpayers = [];
 
-        // Define query parameters
-        $params = [];
-        $types = "";
+    // Define query parameters
+    $params = [];
+    $types = "";
 
-        // Filters for taxpayer table
-        $taxpayerQuery = "
-            SELECT t.id, t.created_by, t.tax_number, t.category, t.presumptive, t.first_name, 
-                t.surname, t.email, t.phone, t.state, t.lga, t.address, t.employment_status, 
-                t.number_of_staff, t.business_own, t.created_time, t.updated_time, 
-                ts.tin_status, 'taxpayer' AS source
-            FROM taxpayer t
-            INNER JOIN taxpayer_security ts ON t.id = ts.taxpayer_id
-            WHERE 1=1
-        ";
+    // Filters for taxpayer table
+    $taxpayerQuery = "
+        SELECT t.id, t.created_by, t.tax_number, t.category, t.presumptive, t.first_name, 
+               t.surname, t.email, t.phone, t.state, t.lga, t.address, t.employment_status, 
+               t.number_of_staff, t.business_own, t.created_time, t.updated_time, 
+               ts.tin_status, 'taxpayer' AS source
+        FROM taxpayer t
+        INNER JOIN taxpayer_security ts ON t.id = ts.taxpayer_id
+        WHERE 1=1
+    ";
 
-        // Filters for enumerator_tax_payers table
-        $enumeratorQuery = "
-            SELECT etp.id, NULL AS created_by, etp.tax_number, NULL AS category, NULL AS presumptive, 
-                etp.first_name, etp.last_name AS surname, etp.email, etp.phone, 
-                etp.state, etp.lga, etp.address, etp.employment_status, 
-                etp.staff_quota AS number_of_staff, NULL AS business_own, 
-                etp.timeIn AS created_time, NULL AS updated_time, 
-                etp.tin_status, 'enumerator_tax_payers' AS source
-            FROM enumerator_tax_payers etp
-            WHERE 1=1
-        ";
+    // Filters for enumerator_tax_payers table
+    $enumeratorQuery = "
+        SELECT etp.id, NULL AS created_by, etp.tax_number, NULL AS category, NULL AS presumptive, 
+               etp.first_name, etp.last_name AS surname, etp.email, etp.phone, 
+               etp.state, etp.lga, etp.address, etp.employment_status, 
+               etp.staff_quota AS number_of_staff, NULL AS business_own, 
+               etp.timeIn AS created_time, NULL AS updated_time, 
+               etp.tin_status, 'enumerator_tax_payers' AS source
+        FROM enumerator_tax_payers etp
+        WHERE 1=1
+    ";
 
-        // Apply filters to both queries
-        if (!empty($queryParams['tax_number'])) {
-            $taxpayerQuery .= " AND t.tax_number LIKE ?";
-            $enumeratorQuery .= " AND etp.tax_number LIKE ?";
-            $params[] = '%' . $queryParams['tax_number'] . '%';
-            $types .= "s";
-        }
-        if (!empty($queryParams['first_name'])) {
-            $taxpayerQuery .= " AND t.first_name LIKE ?";
-            $enumeratorQuery .= " AND etp.first_name LIKE ?";
-            $params[] = '%' . $queryParams['first_name'] . '%';
-            $types .= "s";
-        }
-        if (!empty($queryParams['surname'])) {
-            $taxpayerQuery .= " AND t.surname LIKE ?";
-            $enumeratorQuery .= " AND etp.last_name LIKE ?";
-            $params[] = '%' . $queryParams['surname'] . '%';
-            $types .= "s";
-        }
-        if (!empty($queryParams['state'])) {
-            $taxpayerQuery .= " AND t.state = ?";
-            $enumeratorQuery .= " AND etp.state = ?";
-            $params[] = $queryParams['state'];
-            $types .= "s";
-        }
-        if (!empty($queryParams['lga'])) {
-            $taxpayerQuery .= " AND t.lga = ?";
-            $enumeratorQuery .= " AND etp.lga = ?";
-            $params[] = $queryParams['lga'];
-            $types .= "s";
-        }
-
-        // Execute taxpayer query
-        $stmt1 = $this->conn->prepare($taxpayerQuery);
-        if (!empty($params)) {
-            $stmt1->bind_param($types, ...$params);
-        }
-        $stmt1->execute();
-        $result1 = $stmt1->get_result();
-        while ($row = $result1->fetch_assoc()) {
-            $taxpayers[] = $row;
-        }
-        $stmt1->close();
-
-        // Execute enumerator query
-        $stmt2 = $this->conn->prepare($enumeratorQuery);
-        if (!empty($params)) {
-            $stmt2->bind_param($types, ...$params);
-        }
-        $stmt2->execute();
-        $result2 = $stmt2->get_result();
-        while ($row = $result2->fetch_assoc()) {
-            $taxpayers[] = $row;
-        }
-        $stmt2->close();
-
-        // Sort results by created_time
-        usort($taxpayers, function ($a, $b) {
-            return strtotime($b['created_time']) - strtotime($a['created_time']);
-        });
-
-        // Pagination in PHP
-        $page = isset($queryParams['page']) ? (int)$queryParams['page'] : 1;
-        $limit = isset($queryParams['limit']) ? (int)$queryParams['limit'] : 10;
-        $offset = ($page - 1) * $limit;
-
-        $paginatedTaxpayers = array_slice($taxpayers, $offset, $limit);
-        $totalRecords = count($taxpayers);
-        $totalPages = ceil($totalRecords / $limit);
-
-        // Return JSON response
-        echo json_encode([
-            "status" => "success",
-            "data" => $paginatedTaxpayers,
-            "pagination" => [
-                "current_page" => $page,
-                "per_page" => $limit,
-                "total_pages" => $totalPages,
-                "total_records" => $totalRecords
-            ]
-        ]);
+    // Apply filters to both queries
+    if (!empty($queryParams['tax_number'])) {
+        $taxpayerQuery .= " AND t.tax_number LIKE ?";
+        $enumeratorQuery .= " AND etp.tax_number LIKE ?";
+        $params[] = '%' . $queryParams['tax_number'] . '%';
+        $types .= "s";
     }
+    if (!empty($queryParams['first_name'])) {
+        $taxpayerQuery .= " AND t.first_name LIKE ?";
+        $enumeratorQuery .= " AND etp.first_name LIKE ?";
+        $params[] = '%' . $queryParams['first_name'] . '%';
+        $types .= "s";
+    }
+    if (!empty($queryParams['surname'])) {
+        $taxpayerQuery .= " AND t.surname LIKE ?";
+        $enumeratorQuery .= " AND etp.last_name LIKE ?";
+        $params[] = '%' . $queryParams['surname'] . '%';
+        $types .= "s";
+    }
+    if (!empty($queryParams['phone'])) {
+        $taxpayerQuery .= " AND t.phone = ?";
+        $enumeratorQuery .= " AND etp.phone = ?";
+        $params[] = $queryParams['phone'];
+        $types .= "s";
+    }
+    if (!empty($queryParams['email'])) {
+        $taxpayerQuery .= " AND t.email LIKE ?";
+        $enumeratorQuery .= " AND etp.email LIKE ?";
+        $params[] = '%' . $queryParams['email'] . '%';
+        $types .= "s";
+    }
+    if (!empty($queryParams['state'])) {
+        $taxpayerQuery .= " AND t.state = ?";
+        $enumeratorQuery .= " AND etp.state = ?";
+        $params[] = $queryParams['state'];
+        $types .= "s";
+    }
+    if (!empty($queryParams['lga'])) {
+        $taxpayerQuery .= " AND t.lga = ?";
+        $enumeratorQuery .= " AND etp.lga = ?";
+        $params[] = $queryParams['lga'];
+        $types .= "s";
+    }
+
+    // Execute taxpayer query
+    $stmt1 = $this->conn->prepare($taxpayerQuery);
+    if (!empty($params)) {
+        $stmt1->bind_param($types, ...$params);
+    }
+    $stmt1->execute();
+    $result1 = $stmt1->get_result();
+    while ($row = $result1->fetch_assoc()) {
+        $taxpayers[] = $row;
+    }
+    $stmt1->close();
+
+    // Execute enumerator query
+    $stmt2 = $this->conn->prepare($enumeratorQuery);
+    if (!empty($params)) {
+        $stmt2->bind_param($types, ...$params);
+    }
+    $stmt2->execute();
+    $result2 = $stmt2->get_result();
+    while ($row = $result2->fetch_assoc()) {
+        $taxpayers[] = $row;
+    }
+    $stmt2->close();
+
+    // Sort results by created_time
+    usort($taxpayers, function ($a, $b) {
+        return strtotime($b['created_time']) - strtotime($a['created_time']);
+    });
+
+    // Pagination in PHP
+    $page = isset($queryParams['page']) ? (int)$queryParams['page'] : 1;
+    $limit = isset($queryParams['limit']) ? (int)$queryParams['limit'] : 10;
+    $offset = ($page - 1) * $limit;
+
+    $paginatedTaxpayers = array_slice($taxpayers, $offset, $limit);
+    $totalRecords = count($taxpayers);
+    $totalPages = ceil($totalRecords / $limit);
+
+    // Return JSON response
+    echo json_encode([
+        "status" => "success",
+        "data" => $paginatedTaxpayers,
+        "pagination" => [
+            "current_page" => $page,
+            "per_page" => $limit,
+            "total_pages" => $totalPages,
+            "total_records" => $totalRecords
+        ]
+    ]);
+}
 
     
     
