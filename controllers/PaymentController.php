@@ -28,11 +28,14 @@ class PaymentController {
                 $responseGate = json_encode(['status' => 'error', 'message' => 'Invalid payment data']);
                 return;
             }
-
+            
             $user_id = $this->getUserIdFromInvoice($paymentData['invoice_number']);
             if ($user_id === null) {
-                $responseGate = json_encode(['status' => 'error', 'message' => 'Invoice not found or user_id is missing']);
-                return;
+                $user_id = $this->getUserIdFromDemandNotice($paymentData['invoice_number']);
+                if ($user_id === null) {
+                    $responseGate = json_encode(['status' => 'error', 'message' => 'Invoice not found or user_id is missing']);
+                    return;
+                }
             }
 
             $paymentData['user_id'] = $user_id;
@@ -265,6 +268,24 @@ class PaymentController {
     private function getUserIdFromInvoice($invoice_number) {
         // Query the invoice table to fetch the user_id using the invoice_number
         $query = "SELECT tax_number FROM invoices WHERE invoice_number = ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bind_param('s', $invoice_number);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        // Fetch the user_id from the invoice
+        if ($row = $result->fetch_assoc()) {
+            $row['user_id'] = $row['tax_number'];
+            return $row['user_id'];
+        }
+
+        // Return null if no matching invoice or user_id found
+        return null;
+    }
+
+    private function getUserIdFromDemandNotice($invoice_number) {
+        // Query the invoice table to fetch the user_id using the invoice_number
+        $query = "SELECT tax_number FROM demand_notices WHERE invoice_number = ?";
         $stmt = $this->conn->prepare($query);
         $stmt->bind_param('s', $invoice_number);
         $stmt->execute();
