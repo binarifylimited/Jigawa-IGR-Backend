@@ -275,138 +275,269 @@ class InvoiceController {
     /**
      * Fetch all invoices with pagination and filters, along with revenue head and MDA names.
      */
-    public function getInvoices($filters, $page, $limit) {
-        // Set default page and limit if not provided
-        $page = isset($page) ? (int)$page : 1;
-        $limit = isset($limit) ? (int)$limit : 10;
-        $offset = ($page - 1) * $limit;
+    // public function getInvoices($filters, $page, $limit) {
+    //     // Set default page and limit if not provided
+    //     $page = isset($page) ? (int)$page : 1;
+    //     $limit = isset($limit) ? (int)$limit : 10;
+    //     $offset = ($page - 1) * $limit;
     
-        // Base query for invoices without aggregating revenue head details
-        $query = "
-            SELECT 
-                i.*, 
-                COALESCE(tp.first_name, etp.first_name, su.name) AS tax_first_name,
-                COALESCE(tp.surname, etp.last_name, NULL) AS tax_last_name,
-                COALESCE(tp.email, etp.email, su.email) AS tax_email,
-                COALESCE(tp.phone, etp.phone, su.phone) AS tax_phone,
-                su.industry AS special_user_industry,
-                su.staff_quota AS special_user_staff_quota,
-                su.official_TIN AS special_user_official_tin,
-                su.state AS special_user_state,
-                su.lga AS special_user_lga,
-                su.address AS special_user_address,
-                su.category AS special_user_category
-            FROM invoices i
-            LEFT JOIN taxpayer tp ON tp.tax_number = i.tax_number
-            LEFT JOIN enumerator_tax_payers etp ON etp.tax_number = i.tax_number
-            LEFT JOIN special_users_ su ON su.payer_id = i.tax_number
-            WHERE 1=1
-        ";
+    //     // Base query for invoices without aggregating revenue head details
+    //     $query = "
+    //         SELECT 
+    //             i.*, 
+    //             COALESCE(tp.first_name, etp.first_name, su.name) AS tax_first_name,
+    //             COALESCE(tp.surname, etp.last_name, NULL) AS tax_last_name,
+    //             COALESCE(tp.email, etp.email, su.email) AS tax_email,
+    //             COALESCE(tp.phone, etp.phone, su.phone) AS tax_phone,
+    //             su.industry AS special_user_industry,
+    //             su.staff_quota AS special_user_staff_quota,
+    //             su.official_TIN AS special_user_official_tin,
+    //             su.state AS special_user_state,
+    //             su.lga AS special_user_lga,
+    //             su.address AS special_user_address,
+    //             su.category AS special_user_category
+    //         FROM invoices i
+    //         LEFT JOIN taxpayer tp ON tp.tax_number = i.tax_number
+    //         LEFT JOIN enumerator_tax_payers etp ON etp.tax_number = i.tax_number
+    //         LEFT JOIN special_users_ su ON su.payer_id = i.tax_number
+    //         WHERE 1=1
+    //     ";
         
-        $params = [];
-        $types = '';
+    //     $params = [];
+    //     $types = '';
     
-        // Apply filters
-        if (isset($filters['invoice_number'])) {
-            $query .= " AND i.invoice_number = ?";
-            $params[] = $filters['invoice_number'];
-            $types .= 's';
-        }
+    //     // Apply filters
+    //     if (isset($filters['invoice_number'])) {
+    //         $query .= " AND i.invoice_number = ?";
+    //         $params[] = $filters['invoice_number'];
+    //         $types .= 's';
+    //     }
     
-        if (isset($filters['tax_number'])) {
-            $query .= " AND i.tax_number = ?";
-            $params[] = $filters['tax_number'];
-            $types .= 's';
-        }
+    //     if (isset($filters['tax_number'])) {
+    //         $query .= " AND i.tax_number = ?";
+    //         $params[] = $filters['tax_number'];
+    //         $types .= 's';
+    //     }
     
-        if (isset($filters['invoice_type'])) {
-            $query .= " AND i.invoice_type = ?";
-            $params[] = $filters['invoice_type'];
-            $types .= 's';
-        }
+    //     if (isset($filters['invoice_type'])) {
+    //         $query .= " AND i.invoice_type = ?";
+    //         $params[] = $filters['invoice_type'];
+    //         $types .= 's';
+    //     }
     
-        if (isset($filters['payment_status'])) {
-            $query .= " AND i.payment_status = ?";
-            $params[] = $filters['payment_status'];
-            $types .= 's';
-        }
+    //     if (isset($filters['payment_status'])) {
+    //         $query .= " AND i.payment_status = ?";
+    //         $params[] = $filters['payment_status'];
+    //         $types .= 's';
+    //     }
     
-        if (isset($filters['due_date_start']) && isset($filters['due_date_end'])) {
-            $query .= " AND i.due_date BETWEEN ? AND ?";
-            $params[] = $filters['due_date_start'];
-            $params[] = $filters['due_date_end'];
-            $types .= 'ss';
-        }
+    //     if (isset($filters['due_date_start']) && isset($filters['due_date_end'])) {
+    //         $query .= " AND i.due_date BETWEEN ? AND ?";
+    //         $params[] = $filters['due_date_start'];
+    //         $params[] = $filters['due_date_end'];
+    //         $types .= 'ss';
+    //     }
     
-        if (isset($filters['date_created_start']) && isset($filters['date_created_end'])) {
-            $query .= " AND i.date_created BETWEEN ? AND ?";
-            $params[] = $filters['date_created_start'];
-            $params[] = $filters['date_created_end'];
-            $types .= 'ss';
-        }
+    //     if (isset($filters['date_created_start']) && isset($filters['date_created_end'])) {
+    //         $query .= " AND i.date_created BETWEEN ? AND ?";
+    //         $params[] = $filters['date_created_start'];
+    //         $params[] = $filters['date_created_end'];
+    //         $types .= 'ss';
+    //     }
     
-        //  
-        $query .= " LIMIT ? OFFSET ?";
-        $params[] = $limit;
-        $params[] = $offset;
-        $types .= 'ii';
+    //     //  
+    //     $query .= " LIMIT ? OFFSET ?";
+    //     $params[] = $limit;
+    //     $params[] = $offset;
+    //     $types .= 'ii';
     
-        // Prepare and execute the query
-        $stmt = $this->conn->prepare($query);
-        if (!empty($params)) {
-            $stmt->bind_param($types, ...$params); // Bind parameters dynamically
-        }
+    //     // Prepare and execute the query
+    //     $stmt = $this->conn->prepare($query);
+    //     if (!empty($params)) {
+    //         $stmt->bind_param($types, ...$params); // Bind parameters dynamically
+    //     }
+    //     $stmt->execute();
+    //     $result = $stmt->get_result();
+    //     $invoices = $result->fetch_all(MYSQLI_ASSOC);
+    //     $stmt->close();
+    
+    //     // Process each invoice to add revenue head details
+    //     foreach ($invoices as &$invoice) {
+    //         $revenueHeads = json_decode($invoice['revenue_head'], true);
+    //         $detailedRevenueHeads = [];
+    
+    //         // For each revenue head in the JSON array, fetch additional details
+    //         foreach ($revenueHeads as $revenueHead) {
+    //             $revenueHeadId = $revenueHead['revenue_head_id'];
+    //             $amount = $revenueHead['amount'];
+    
+    //             // Fetch revenue head details and MDA name
+    //             $revenueHeadDetails = $this->getRevenueHeadDetails($revenueHeadId);
+    //             if ($revenueHeadDetails) {
+    //                 $detailedRevenueHeads[] = [
+    //                     'revenue_head_id' => $revenueHeadId,
+    //                     'item_name' => $revenueHeadDetails['item_name'],
+    //                     'amount' => $amount,
+    //                     'mda_name' => $revenueHeadDetails['mda_name']
+    //                 ];
+    //             }
+    //         }
+    
+    //         // Add detailed revenue heads to the invoice
+    //         $invoice['revenue_heads'] = $detailedRevenueHeads;
+    //     }
+    
+    //     // Fetch total number of invoices for pagination
+    //     $count_query = "SELECT COUNT(*) as total FROM invoices WHERE 1=1";
+    //     $stmt_count = $this->conn->prepare($count_query);
+    //     $stmt_count->execute();
+    //     $count_result = $stmt_count->get_result();
+    //     $total_invoices = $count_result->fetch_assoc()['total'];
+    //     $total_pages = ceil($total_invoices / $limit);
+    //     $stmt_count->close();
+    
+    //     // Return the paginated and filtered invoices
+    //     echo json_encode([
+    //         'status' => 'success',
+    //         'data' => [
+    //             'current_page' => $page,
+    //             'total_pages' => $total_pages,
+    //             'total_invoices' => $total_invoices,
+    //             'invoices' => $invoices
+    //         ]
+    //     ]);
+    // }
+
+    public function getInvoices($filters, $page, $limit)
+{
+    // Ensure MDA ID is provided if required
+    $mdaRevenueHeadMap = [];
+    if (!empty($filters['mda_id'])) {
+        // Fetch all revenue head IDs and names for the specified MDA
+        $revenueHeadQuery = "SELECT * FROM revenue_heads WHERE mda_id = ?";
+        $stmt = $this->conn->prepare($revenueHeadQuery);
+        $stmt->bind_param('i', $filters['mda_id']);
         $stmt->execute();
         $result = $stmt->get_result();
-        $invoices = $result->fetch_all(MYSQLI_ASSOC);
-        $stmt->close();
-    
-        // Process each invoice to add revenue head details
-        foreach ($invoices as &$invoice) {
-            $revenueHeads = json_decode($invoice['revenue_head'], true);
-            $detailedRevenueHeads = [];
-    
-            // For each revenue head in the JSON array, fetch additional details
-            foreach ($revenueHeads as $revenueHead) {
-                $revenueHeadId = $revenueHead['revenue_head_id'];
-                $amount = $revenueHead['amount'];
-    
-                // Fetch revenue head details and MDA name
-                $revenueHeadDetails = $this->getRevenueHeadDetails($revenueHeadId);
-                if ($revenueHeadDetails) {
-                    $detailedRevenueHeads[] = [
-                        'revenue_head_id' => $revenueHeadId,
-                        'item_name' => $revenueHeadDetails['item_name'],
-                        'amount' => $amount,
-                        'mda_name' => $revenueHeadDetails['mda_name']
-                    ];
-                }
-            }
-    
-            // Add detailed revenue heads to the invoice
-            $invoice['revenue_heads'] = $detailedRevenueHeads;
+
+        while ($row = $result->fetch_assoc()) {
+            $mdaRevenueHeadMap[$row['id']] = $row['item_name'];
         }
-    
-        // Fetch total number of invoices for pagination
-        $count_query = "SELECT COUNT(*) as total FROM invoices WHERE 1=1";
-        $stmt_count = $this->conn->prepare($count_query);
-        $stmt_count->execute();
-        $count_result = $stmt_count->get_result();
-        $total_invoices = $count_result->fetch_assoc()['total'];
-        $total_pages = ceil($total_invoices / $limit);
-        $stmt_count->close();
-    
-        // Return the paginated and filtered invoices
-        echo json_encode([
-            'status' => 'success',
-            'data' => [
-                'current_page' => $page,
-                'total_pages' => $total_pages,
-                'total_invoices' => $total_invoices,
-                'invoices' => $invoices
-            ]
-        ]);
+        $stmt->close();
+
+        // If no revenue heads found, return an empty result
+        if (empty($mdaRevenueHeadMap)) {
+            echo json_encode(['status' => 'success', 'data' => [], 'pagination' => ['total_records' => 0]]);
+            return;
+        }
     }
+
+    // Set default page and limit if not provided
+    $page = isset($page) ? (int)$page : 1;
+    $limit = isset($limit) ? (int)$limit : 10;
+    $offset = ($page - 1) * $limit;
+
+    // Base query for invoices
+    $invoiceQuery = "SELECT * FROM invoices WHERE 1=1";
+    $params = [];
+    $types = '';
+
+    // Apply filters
+    if (isset($filters['invoice_number'])) {
+        $invoiceQuery .= " AND invoice_number = ?";
+        $params[] = $filters['invoice_number'];
+        $types .= 's';
+    }
+
+    if (isset($filters['tax_number'])) {
+        $invoiceQuery .= " AND tax_number = ?";
+        $params[] = $filters['tax_number'];
+        $types .= 's';
+    }
+
+    if (isset($filters['invoice_type'])) {
+        $invoiceQuery .= " AND invoice_type = ?";
+        $params[] = $filters['invoice_type'];
+        $types .= 's';
+    }
+
+    if (isset($filters['payment_status'])) {
+        $invoiceQuery .= " AND payment_status = ?";
+        $params[] = $filters['payment_status'];
+        $types .= 's';
+    }
+
+    if (isset($filters['due_date_start']) && isset($filters['due_date_end'])) {
+        $invoiceQuery .= " AND due_date BETWEEN ? AND ?";
+        $params[] = $filters['due_date_start'];
+        $params[] = $filters['due_date_end'];
+        $types .= 'ss';
+    }
+
+    if (isset($filters['date_created_start']) && isset($filters['date_created_end'])) {
+        $invoiceQuery .= " AND date_created BETWEEN ? AND ?";
+        $params[] = $filters['date_created_start'];
+        $params[] = $filters['date_created_end'];
+        $types .= 'ss';
+    }
+
+    // Prepare and execute the query
+    $stmt = $this->conn->prepare($invoiceQuery);
+    if (!empty($params)) {
+        $stmt->bind_param($types, ...$params);
+    }
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $invoices = [];
+    while ($row = $result->fetch_assoc()) {
+        $revenueHeads = json_decode($row['revenue_head'], true);
+        $associatedRevenueHeads = [];
+        $includeInvoice = false;
+
+        // Process the revenue heads
+        foreach ($revenueHeads as $revenueHead) {
+            if (
+                (empty($filters['revenue_head_id']) || $revenueHead['revenue_head_id'] == $filters['revenue_head_id']) &&
+                (empty($filters['mda_id']) || isset($mdaRevenueHeadMap[$revenueHead['revenue_head_id']]))
+            ) {
+                $includeInvoice = true;
+                $associatedRevenueHeads[] = [
+                    'revenue_head_id' => $revenueHead['revenue_head_id'],
+                    'item_name' => $mdaRevenueHeadMap[$revenueHead['revenue_head_id']] ?? 'N/A',
+                    'amount' => $revenueHead['amount']
+                ];
+            }
+        }
+
+        if ($includeInvoice) {
+            $row['associated_revenue_heads'] = $associatedRevenueHeads;
+            $invoices[] = $row;
+        }
+    }
+    $stmt->close();
+
+    // Pagination
+    $totalRecords = count($invoices);
+    $totalPages = ceil($totalRecords / $limit);
+    $paginatedInvoices = array_slice($invoices, $offset, $limit);
+
+    // Return the result
+    echo json_encode([
+        "status" => "success",
+        "data" => $paginatedInvoices,
+        "pagination" => [
+            "current_page" => $page,
+            "per_page" => $limit,
+            "total_pages" => $totalPages,
+            "total_records" => $totalRecords
+        ]
+    ]);
+}
+
+    
+
+    
+    
 
     public function getDemandNoticeInvoices($filters, $page, $limit)
     {

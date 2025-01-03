@@ -39,6 +39,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $uri === '/get-invoices') {
     // }
     $filters = [
         'invoice_number' => isset($_GET['invoice_number']) ? $_GET['invoice_number'] : null,
+        'mda_id' => isset($_GET['mda_id']) ? $_GET['mda_id'] : null,
+        'revenue_head_id' => isset($_GET['revenue_head_id']) ? $_GET['revenue_head_id'] : null,
         'tax_number' => isset($_GET['tax_number']) ? $_GET['tax_number'] : null,
         'invoice_type' => isset($_GET['invoice_type']) ? $_GET['invoice_type'] : null,
         'payment_status' => isset($_GET['payment_status']) ? $_GET['payment_status'] : null,
