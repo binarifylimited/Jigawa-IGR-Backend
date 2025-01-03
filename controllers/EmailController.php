@@ -1,10 +1,9 @@
 <?php
 
+use Helpers\email_key;
 class EmailController
 {
     private $apiUrl = "https://api.brevo.com/v3/smtp/email";
-    private $apiKey = "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";
-
     public function invoiceEmail($email, $first_name, $due_date, $invoice_number, $revenue_head)
     {
         // Create an array with the email data
@@ -158,7 +157,7 @@ class EmailController
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             'Accept: application/json',
-            'api-key: ' . $this->apiKey,
+            'api-key: ' . email_key::$apiKey,
             'Content-Type: application/json',
         ]);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
